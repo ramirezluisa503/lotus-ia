@@ -1,0 +1,23 @@
+# Entornos y dependencias
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# Variables de entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Artefactos de build
+frontend/dist/
+backend/dist/
+
+# Modelos entrenados (pesan mucho; se versionan aparte o con Git LFS)
+ml/modelos/*.pkl
+
+# Editor / SO
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
