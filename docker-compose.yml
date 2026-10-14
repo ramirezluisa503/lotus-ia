@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16
+    container_name: lotusia_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lotusia
+      POSTGRES_PASSWORD: lotusia_dev
+      POSTGRES_DB: lotusia
+    ports:
+      - "5432:5432"
+    volumes:
+      - lotusia_db_data:/var/lib/postgresql/data
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lotusia -d lotusia"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  lotusia_db_data:

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="marcaLotusIA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#19748A" />
+      <stop offset="100%" stop-color="#0A2E4A" />
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="56" fill="url(#marcaLotusIA)" />
+
+  <g transform="translate(26 26) scale(1.8333)" fill="#A4F5C0">
+    <path d="M12 2c2.5 2.8 4 6 4 9a4 4 0 0 1-8 0c0-3 1.5-6.2 4-9Z" opacity="0.9" />
+    <path d="M4 13c2.9.7 5 2.6 6.2 5.3C6.5 19 4 16.4 4 13Z" opacity="0.65" />
+    <path d="M20 13c-2.9.7-5 2.6-6.2 5.3 3.7-.3 6.2-2.9 6.2-5.3Z" opacity="0.65" />
+  </g>
+</svg>
