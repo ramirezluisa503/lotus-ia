@@ -7,6 +7,7 @@ from app.controllers.cuestionario_controller import (
     cuestionario_router,
     instrumentos_router,
 )
+from app.controllers.admin_controller import router as admin_router
 from app.controllers.encuesta_controller import router as encuesta_router
 from app.controllers.oferta_controller import router as oferta_router
 from app.controllers.recomendacion_controller import router as recomendacion_router
@@ -31,6 +32,7 @@ app.include_router(instrumentos_router, prefix="/api")
 app.include_router(oferta_router, prefix="/api")
 app.include_router(recomendacion_router, prefix="/api")
 app.include_router(encuesta_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
 
 
 @app.get("/api/health")

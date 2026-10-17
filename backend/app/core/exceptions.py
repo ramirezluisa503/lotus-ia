@@ -44,3 +44,7 @@ class RecomendacionNoEncontradaError(Exception):
 
 class RecomendacionYaCalificadaError(Exception):
     """Ya existe una encuesta de satisfacción para esta recomendación."""
+
+
+class RecursoNoEncontradoError(Exception):
+    """Entidad administrable (institución, carrera, beca, modelo) no encontrada."""

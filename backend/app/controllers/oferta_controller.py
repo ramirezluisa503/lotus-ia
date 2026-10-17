@@ -12,7 +12,7 @@ router = APIRouter(prefix="/oferta", tags=["Oferta académica"])
 
 @router.get("/areas", response_model=list[AreaConocimientoResponse])
 def listar_areas(
-    _usuario=Depends(requerir_rol("ESTUDIANTE")),
+    _usuario=Depends(requerir_rol("ESTUDIANTE", "ADMINISTRADOR")),
     db: Session = Depends(get_db),
 ):
     return OfertaAcademicaService(db).listar_areas()

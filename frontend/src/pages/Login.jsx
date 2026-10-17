@@ -21,8 +21,8 @@ export default function Login() {
     setError("");
     setEnviando(true);
     try {
-      await login({ correo, contrasena });
-      navigate("/panel");
+      const usuario = await login({ correo, contrasena });
+      navigate(usuario.rol === "ADMINISTRADOR" ? "/admin" : "/panel");
     } catch (err) {
       setError(mensajeDeError(err));
     } finally {

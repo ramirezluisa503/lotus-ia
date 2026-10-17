@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import RutaProtegida from "./components/RutaProtegida";
+import Admin from "./pages/admin/Admin";
 import Autorizacion from "./pages/Autorizacion";
 import Cuestionario from "./pages/cuestionario/Cuestionario";
 import Home from "./pages/Home";
@@ -52,6 +53,14 @@ export default function App() {
         element={
           <RutaProtegida>
             <Resultado />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <RutaProtegida rolesPermitidos={["ADMINISTRADOR"]}>
+            <Admin />
           </RutaProtegida>
         }
       />

@@ -4,6 +4,7 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, SmallInteger, Str
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.models.area_conocimiento import AreaConocimiento
 from app.models.institucion import InstitucionEducativa
 
 
@@ -26,3 +27,4 @@ class Carrera(Base):
     actualizado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     institucion: Mapped[InstitucionEducativa] = relationship(InstitucionEducativa, lazy="joined")
+    area: Mapped[AreaConocimiento] = relationship(AreaConocimiento, lazy="joined")
