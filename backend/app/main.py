@@ -7,6 +7,7 @@ from app.controllers.cuestionario_controller import (
     cuestionario_router,
     instrumentos_router,
 )
+from app.controllers.oferta_controller import router as oferta_router
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -25,6 +26,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(consentimiento_router, prefix="/api")
 app.include_router(cuestionario_router, prefix="/api")
 app.include_router(instrumentos_router, prefix="/api")
+app.include_router(oferta_router, prefix="/api")
 
 
 @app.get("/api/health")

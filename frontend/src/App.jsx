@@ -4,6 +4,7 @@ import Autorizacion from "./pages/Autorizacion";
 import Cuestionario from "./pages/cuestionario/Cuestionario";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Oferta from "./pages/Oferta";
 import Panel from "./pages/Panel";
 import Registro from "./pages/Registro";
 
@@ -34,6 +35,14 @@ export default function App() {
         element={
           <RutaProtegida>
             <Cuestionario />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/oferta"
+        element={
+          <RutaProtegida>
+            <Oferta />
           </RutaProtegida>
         }
       />

@@ -80,6 +80,21 @@ export default function Panel() {
             </div>
           )}
 
+          {usuario?.rol === "ESTUDIANTE" && (
+            <div className="mt-4 rounded-xl border border-navy/10 p-4">
+              <p className="text-sm font-medium text-navy">
+                Oferta académica y becas en Pereira
+              </p>
+              <p className="mt-1 text-xs text-navy/60">
+                Explora instituciones, carreras y apoyos económicos mientras
+                esperas tu recomendación.
+              </p>
+              <Link to="/oferta" className="mt-3 inline-block text-sm font-medium text-teal hover:underline">
+                Explorar oferta →
+              </Link>
+            </div>
+          )}
+
           {usuario?.rol === "ACUDIENTE" && (
             <div className="mt-4 rounded-xl border border-navy/10 p-4">
               <p className="text-sm font-medium text-navy">
