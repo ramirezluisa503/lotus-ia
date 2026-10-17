@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Alert from "../components/Alert";
 import Navbar from "../components/Navbar";
 import { inputClasses } from "../components/Field";
@@ -75,8 +76,9 @@ function TarjetaBeca({ beca }) {
 }
 
 export default function Oferta() {
+  const [searchParams] = useSearchParams();
   const [areas, setAreas] = useState([]);
-  const [area, setArea] = useState("");
+  const [area, setArea] = useState(searchParams.get("area") ?? "");
   const [nivel, setNivel] = useState("");
   const [carreras, setCarreras] = useState([]);
   const [becas, setBecas] = useState([]);

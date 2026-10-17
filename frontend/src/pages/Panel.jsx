@@ -80,6 +80,15 @@ export default function Panel() {
             </div>
           )}
 
+          {usuario?.rol === "ESTUDIANTE" && estado?.puede_continuar && (
+            <div className="mt-4 rounded-xl border border-navy/10 p-4">
+              <p className="text-sm font-medium text-navy">Tu recomendación vocacional</p>
+              <Link to="/resultado" className="mt-3 inline-block text-sm font-medium text-teal hover:underline">
+                Ver mi resultado →
+              </Link>
+            </div>
+          )}
+
           {usuario?.rol === "ESTUDIANTE" && (
             <div className="mt-4 rounded-xl border border-navy/10 p-4">
               <p className="text-sm font-medium text-navy">

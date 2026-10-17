@@ -28,3 +28,19 @@ class AreaAcademicaInvalidaError(Exception):
 
 class InstrumentoNoDisponibleError(Exception):
     """No hay ningún instrumento psicométrico activo configurado."""
+
+
+class DatosInsuficientesError(Exception):
+    """Falta completar el cuestionario antes de generar una recomendación."""
+
+
+class ModeloNoDisponibleError(Exception):
+    """No hay ningún modelo de IA activo configurado."""
+
+
+class RecomendacionNoEncontradaError(Exception):
+    """La recomendación no existe o no pertenece a este estudiante."""
+
+
+class RecomendacionYaCalificadaError(Exception):
+    """Ya existe una encuesta de satisfacción para esta recomendación."""

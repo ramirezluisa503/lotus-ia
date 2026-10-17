@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Alert from "../../components/Alert";
 import Button from "../../components/Button";
 import Navbar from "../../components/Navbar";
 import ProgressBar from "../../components/ProgressBar";
-import { IconSparkles } from "../../components/icons";
 import { mensajeDeError } from "../../services/api";
 import { obtenerEstadoAutorizacion } from "../../services/consentimientoService";
 import {
@@ -14,6 +13,7 @@ import {
   guardarSocioeconomico,
   obtenerInstrumentoActivo,
 } from "../../services/cuestionarioService";
+import { generarRecomendacion } from "../../services/recomendacionService";
 import PasoAcademico, { AREAS_ACADEMICAS } from "./PasoAcademico";
 import PasoPsicometrico from "./PasoPsicometrico";
 import PasoSocioeconomico from "./PasoSocioeconomico";
@@ -28,7 +28,6 @@ export default function Cuestionario() {
   const [paso, setPaso] = useState(1);
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
-  const [completado, setCompletado] = useState(false);
 
   const [academico, setAcademico] = useState({});
   const [socio, setSocio] = useState({});
@@ -114,7 +113,8 @@ export default function Cuestionario() {
         valor,
       }));
       await guardarPsicometrico(payload);
-      setCompletado(true);
+      await generarRecomendacion();
+      navigate("/resultado");
     } catch (err) {
       setError(mensajeDeError(err));
     } finally {
@@ -135,28 +135,7 @@ export default function Cuestionario() {
       <Navbar />
       <main className="mx-auto max-w-xl px-6 py-12">
         <div className="rounded-3xl border border-navy/5 bg-white p-8 shadow-xl shadow-teal/10">
-          {completado ? (
-            <div className="text-center">
-              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mint/40 text-teal">
-                <IconSparkles className="h-5.5 w-5.5" />
-              </span>
-              <h1 className="mt-4 text-lg font-semibold text-navy">
-                ¡Completaste el cuestionario!
-              </h1>
-              <p className="mt-2 text-sm text-navy/60">
-                Tu recomendación vocacional estará disponible muy pronto. Esta
-                herramienta es orientativa y no reemplaza el acompañamiento de
-                tu orientador escolar.
-              </p>
-              <Link to="/panel">
-                <Button variant="primary" className="mt-6 w-full">
-                  Volver a mi panel
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <>
-              <ProgressBar paso={paso} total={TOTAL_PASOS} />
+          <ProgressBar paso={paso} total={TOTAL_PASOS} />
 
               <h1 className="mt-5 text-lg font-semibold text-navy">
                 {paso === 1 && "Datos académicos"}
@@ -231,8 +210,6 @@ export default function Cuestionario() {
                   </Button>
                 )}
               </div>
-            </>
-          )}
         </div>
       </main>
     </div>

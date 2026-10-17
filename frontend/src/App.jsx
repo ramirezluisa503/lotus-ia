@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Oferta from "./pages/Oferta";
 import Panel from "./pages/Panel";
 import Registro from "./pages/Registro";
+import Resultado from "./pages/Resultado";
 
 export default function App() {
   return (
@@ -43,6 +44,14 @@ export default function App() {
         element={
           <RutaProtegida>
             <Oferta />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/resultado"
+        element={
+          <RutaProtegida>
+            <Resultado />
           </RutaProtegida>
         }
       />
