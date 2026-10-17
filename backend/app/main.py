@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.controllers.auth_controller import router as auth_router
+from app.controllers.consentimiento_controller import router as consentimiento_router
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -17,6 +18,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router, prefix="/api")
+app.include_router(consentimiento_router, prefix="/api")
 
 
 @app.get("/api/health")

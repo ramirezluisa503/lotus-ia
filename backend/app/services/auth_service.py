@@ -4,6 +4,7 @@ from app.core.exceptions import (
     CorreoYaRegistradoError,
     CredencialesInvalidasError,
     CuentaBloqueadaError,
+    EstudianteNoEncontradoError,
 )
 from app.core.security import (
     cifrar_texto,
@@ -11,9 +12,12 @@ from app.core.security import (
     hashear_contrasena,
     verificar_contrasena,
 )
+from app.models.estudiante import Estudiante
 from app.models.usuario import Usuario
+from app.repositories.estudiante_repository import EstudianteRepository
 from app.repositories.rol_repository import RolRepository
 from app.repositories.usuario_repository import UsuarioRepository
+from app.repositories.vinculo_acudiente_repository import VinculoAcudienteRepository
 from app.schemas.auth import LoginRequest, RegistroRequest
 
 MAX_INTENTOS_FALLIDOS = 5
@@ -24,10 +28,17 @@ class AuthService:
         self.db = db
         self.usuarios = UsuarioRepository(db)
         self.roles = RolRepository(db)
+        self.estudiantes = EstudianteRepository(db)
+        self.vinculos = VinculoAcudienteRepository(db)
 
     def registrar(self, datos: RegistroRequest) -> Usuario:
         if self.usuarios.obtener_por_correo(datos.correo) is not None:
             raise CorreoYaRegistradoError()
+
+        if datos.rol == "ACUDIENTE":
+            estudiante_usuario = self.usuarios.obtener_por_correo(datos.correo_estudiante)
+            if estudiante_usuario is None or estudiante_usuario.rol.nombre != "ESTUDIANTE":
+                raise EstudianteNoEncontradoError()
 
         rol = self.roles.obtener_por_nombre(datos.rol)
         if rol is None:
@@ -40,7 +51,22 @@ class AuthService:
             documento_cifrado=cifrar_texto(datos.documento) if datos.documento else None,
             rol_id=rol.id,
         )
-        return self.usuarios.crear(usuario)
+        self.db.add(usuario)
+        self.db.flush()  # asigna usuario.id sin cerrar la transacción
+
+        if datos.rol == "ESTUDIANTE":
+            estudiante = self.estudiantes.crear(Estudiante(grado=datos.grado))
+            self.estudiantes.vincular_usuario(usuario.id, estudiante.id)
+        else:  # ACUDIENTE
+            self.vinculos.crear(
+                acudiente_id=usuario.id,
+                estudiante_usuario_id=estudiante_usuario.id,
+                parentesco=datos.parentesco,
+            )
+
+        self.db.commit()
+        self.db.refresh(usuario)
+        return usuario
 
     def login(self, datos: LoginRequest) -> tuple[str, Usuario]:
         usuario = self.usuarios.obtener_por_correo(datos.correo)

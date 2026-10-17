@@ -1,8 +1,10 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/Button";
 import Navbar from "../components/Navbar";
 import { IconShield, IconSparkles } from "../components/icons";
 import { useAuth } from "../context/AuthContext";
+import { obtenerEstadoAutorizacion } from "../services/consentimientoService";
 
 const ROL_ETIQUETA = {
   ESTUDIANTE: "Estudiante",
@@ -13,6 +15,13 @@ const ROL_ETIQUETA = {
 export default function Panel() {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
+  const [estado, setEstado] = useState(null);
+
+  useEffect(() => {
+    if (usuario?.rol === "ESTUDIANTE") {
+      obtenerEstadoAutorizacion().then(setEstado).catch(() => {});
+    }
+  }, [usuario]);
 
   function manejarSalir() {
     logout();
@@ -50,10 +59,45 @@ export default function Panel() {
             </div>
           </dl>
 
+          {usuario?.rol === "ESTUDIANTE" && (
+            <div className="mt-4 rounded-xl border border-navy/10 p-4">
+              <p className="text-sm font-medium text-navy">
+                {estado?.puede_continuar
+                  ? "✓ Autorización completa"
+                  : "Falta completar tu autorización"}
+              </p>
+              <p className="mt-1 text-xs text-navy/60">
+                {estado?.puede_continuar
+                  ? "Ya puedes avanzar al cuestionario (próximamente)."
+                  : "Necesitas la autorización de tu acudiente y tu propia aceptación."}
+              </p>
+              <Link
+                to="/autorizacion"
+                className="mt-3 inline-block text-sm font-medium text-teal hover:underline"
+              >
+                Ir a mi autorización →
+              </Link>
+            </div>
+          )}
+
+          {usuario?.rol === "ACUDIENTE" && (
+            <div className="mt-4 rounded-xl border border-navy/10 p-4">
+              <p className="text-sm font-medium text-navy">
+                Autorización del estudiante a tu cargo
+              </p>
+              <Link
+                to="/autorizacion"
+                className="mt-3 inline-block text-sm font-medium text-teal hover:underline"
+              >
+                Ir a autorizar →
+              </Link>
+            </div>
+          )}
+
           <p className="mt-6 flex items-center gap-2 text-xs text-navy/50">
             <IconShield className="h-4 w-4 shrink-0" />
-            Próximamente: consentimiento del acudiente, cuestionarios y tu
-            recomendación vocacional van a aparecer aquí.
+            Próximamente: cuestionarios y tu recomendación vocacional van a
+            aparecer aquí.
           </p>
 
           <Button variant="secondary" className="mt-6 w-full" onClick={manejarSalir}>

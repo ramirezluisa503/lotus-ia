@@ -8,6 +8,12 @@ import { useAuth } from "../context/AuthContext";
 import { mensajeDeError } from "../services/api";
 import { registrar } from "../services/authService";
 
+const PARENTESCOS = [
+  { valor: "MADRE", etiqueta: "Madre" },
+  { valor: "PADRE", etiqueta: "Padre" },
+  { valor: "TUTOR_LEGAL", etiqueta: "Tutor legal" },
+];
+
 export default function Registro() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -18,6 +24,9 @@ export default function Registro() {
     contrasena: "",
     rol: "ESTUDIANTE",
     documento: "",
+    grado: "",
+    correoEstudiante: "",
+    parentesco: "MADRE",
   });
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -37,11 +46,14 @@ export default function Registro() {
         contrasena: form.contrasena,
         rol: form.rol,
         documento: form.rol === "ACUDIENTE" ? form.documento || undefined : undefined,
+        grado: form.rol === "ESTUDIANTE" ? Number(form.grado) : undefined,
+        correo_estudiante: form.rol === "ACUDIENTE" ? form.correoEstudiante : undefined,
+        parentesco: form.rol === "ACUDIENTE" ? form.parentesco : undefined,
       });
       // Registro exitoso: iniciamos sesión automáticamente para no pedirle los
       // datos dos veces.
       await login({ correo: form.correo, contrasena: form.contrasena });
-      navigate("/panel");
+      navigate("/autorizacion");
     } catch (err) {
       setError(mensajeDeError(err));
     } finally {
@@ -115,17 +127,73 @@ export default function Registro() {
             />
           </Field>
 
-          {form.rol === "ACUDIENTE" && (
-            <Field label="Documento de identidad (opcional)" id="documento">
-              <input
-                id="documento"
-                type="text"
-                value={form.documento}
-                onChange={(e) => actualizar("documento", e.target.value)}
-                className={inputClasses(false)}
-                placeholder="Cédula de ciudadanía"
-              />
+          {form.rol === "ESTUDIANTE" && (
+            <Field label="¿En qué grado estás?" id="grado">
+              <div className="grid grid-cols-2 gap-2">
+                {[10, 11].map((grado) => (
+                  <button
+                    key={grado}
+                    type="button"
+                    onClick={() => actualizar("grado", String(grado))}
+                    className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
+                      form.grado === String(grado)
+                        ? "border-teal bg-teal/10 text-teal"
+                        : "border-navy/15 text-navy/60 hover:border-navy/30"
+                    }`}
+                  >
+                    {grado}°
+                  </button>
+                ))}
+              </div>
             </Field>
+          )}
+
+          {form.rol === "ACUDIENTE" && (
+            <>
+              <Field
+                label="Correo del estudiante"
+                id="correoEstudiante"
+              >
+                <input
+                  id="correoEstudiante"
+                  type="email"
+                  required
+                  value={form.correoEstudiante}
+                  onChange={(e) => actualizar("correoEstudiante", e.target.value)}
+                  className={inputClasses(false)}
+                  placeholder="correo@del-estudiante.com"
+                />
+                <p className="mt-1.5 text-xs text-navy/50">
+                  El estudiante debe tener su cuenta creada primero.
+                </p>
+              </Field>
+
+              <Field label="Parentesco" id="parentesco">
+                <select
+                  id="parentesco"
+                  value={form.parentesco}
+                  onChange={(e) => actualizar("parentesco", e.target.value)}
+                  className={inputClasses(false)}
+                >
+                  {PARENTESCOS.map((p) => (
+                    <option key={p.valor} value={p.valor}>
+                      {p.etiqueta}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Documento de identidad (opcional)" id="documento">
+                <input
+                  id="documento"
+                  type="text"
+                  value={form.documento}
+                  onChange={(e) => actualizar("documento", e.target.value)}
+                  className={inputClasses(false)}
+                  placeholder="Cédula de ciudadanía"
+                />
+              </Field>
+            </>
           )}
 
           <Field label="Contraseña" id="contrasena">

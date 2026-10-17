@@ -6,6 +6,7 @@ from app.core.exceptions import (
     CorreoYaRegistradoError,
     CredencialesInvalidasError,
     CuentaBloqueadaError,
+    EstudianteNoEncontradoError,
 )
 from app.db.session import get_db
 from app.schemas.auth import (
@@ -28,6 +29,11 @@ def registrar(datos: RegistroRequest, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Ya existe una cuenta registrada con ese correo.",
+        )
+    except EstudianteNoEncontradoError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No encontramos un estudiante registrado con ese correo. Pídele que cree su cuenta primero.",
         )
     return RegistroResponse(id=usuario.id, correo=usuario.correo, rol=datos.rol)
 
