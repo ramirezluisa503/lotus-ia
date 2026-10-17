@@ -54,3 +54,22 @@ def requerir_rol(*roles_permitidos: str):
         return usuario
 
     return _verificar
+
+
+def requerir_estudiante_autorizado(
+    usuario: UsuarioActual = Depends(requerir_rol("ESTUDIANTE")),
+    db: Session = Depends(get_db),
+) -> uuid.UUID:
+    """Bloquea la captura de datos si falta el consentimiento o el
+    asentimiento (REQF009, REQF010; dependencia Cuestionarios -> Consentimiento
+    del Capítulo 9). Devuelve el estudiante_id (seudónimo) del usuario actual."""
+    from app.repositories.estudiante_repository import EstudianteRepository
+    from app.services.consentimiento_service import ConsentimientoService
+
+    estado = ConsentimientoService(db).obtener_estado(usuario.id)
+    if not estado.puede_continuar:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Necesitamos la autorización de tu acudiente para continuar.",
+        )
+    return EstudianteRepository(db).obtener_estudiante_id_de_usuario(usuario.id)

@@ -68,14 +68,14 @@ export default function Panel() {
               </p>
               <p className="mt-1 text-xs text-navy/60">
                 {estado?.puede_continuar
-                  ? "Ya puedes avanzar al cuestionario (próximamente)."
+                  ? "Ya puedes continuar con tu cuestionario."
                   : "Necesitas la autorización de tu acudiente y tu propia aceptación."}
               </p>
               <Link
-                to="/autorizacion"
+                to={estado?.puede_continuar ? "/cuestionario" : "/autorizacion"}
                 className="mt-3 inline-block text-sm font-medium text-teal hover:underline"
               >
-                Ir a mi autorización →
+                {estado?.puede_continuar ? "Ir a mi cuestionario →" : "Ir a mi autorización →"}
               </Link>
             </div>
           )}
@@ -96,8 +96,7 @@ export default function Panel() {
 
           <p className="mt-6 flex items-center gap-2 text-xs text-navy/50">
             <IconShield className="h-4 w-4 shrink-0" />
-            Próximamente: cuestionarios y tu recomendación vocacional van a
-            aparecer aquí.
+            Próximamente: tu recomendación vocacional va a aparecer aquí.
           </p>
 
           <Button variant="secondary" className="mt-6 w-full" onClick={manejarSalir}>

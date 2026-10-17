@@ -19,12 +19,6 @@ class ConsentimientoService:
         self.estudiantes = EstudianteRepository(db)
         self.vinculos = VinculoAcudienteRepository(db)
 
-    def _estudiante_id_del_acudiente(self, acudiente_usuario_id: uuid.UUID) -> uuid.UUID:
-        estudiante_usuario_id = self.vinculos.obtener_estudiante_vinculado(acudiente_usuario_id)
-        if estudiante_usuario_id is None:
-            raise EstudianteNoVinculadoError()
-        return self.estudiantes.obtener_estudiante_id_de_usuario(estudiante_usuario_id)
-
     def _guardar_decision(
         self, estudiante_id: uuid.UUID, tipo: str, aceptado: bool, acudiente_id: uuid.UUID | None
     ) -> Consentimiento:
@@ -46,16 +40,38 @@ class ConsentimientoService:
     def otorgar_consentimiento_acudiente(
         self, acudiente_usuario_id: uuid.UUID, aceptado: bool
     ) -> Consentimiento:
-        estudiante_id = self._estudiante_id_del_acudiente(acudiente_usuario_id)
-        return self._guardar_decision(
+        estudiante_usuario_id = self.vinculos.obtener_estudiante_vinculado(acudiente_usuario_id)
+        if estudiante_usuario_id is None:
+            raise EstudianteNoVinculadoError()
+        estudiante_id = self.estudiantes.obtener_estudiante_id_de_usuario(estudiante_usuario_id)
+
+        resultado = self._guardar_decision(
             estudiante_id, "CONSENTIMIENTO", aceptado, acudiente_id=acudiente_usuario_id
         )
+
+        estado = self.obtener_estado(estudiante_usuario_id)
+        if estado.puede_continuar:
+            estudiante = self.estudiantes.obtener_por_id(estudiante_id)
+            if estudiante.estado_proceso == "REGISTRADO":
+                estudiante.estado_proceso = "AUTORIZADO"
+                self.db.commit()
+
+        return resultado
 
     def otorgar_asentimiento_estudiante(
         self, estudiante_usuario_id: uuid.UUID, aceptado: bool
     ) -> Consentimiento:
         estudiante_id = self.estudiantes.obtener_estudiante_id_de_usuario(estudiante_usuario_id)
-        return self._guardar_decision(estudiante_id, "ASENTIMIENTO", aceptado, acudiente_id=None)
+        resultado = self._guardar_decision(estudiante_id, "ASENTIMIENTO", aceptado, acudiente_id=None)
+
+        estado = self.obtener_estado(estudiante_usuario_id)
+        if estado.puede_continuar:
+            estudiante = self.estudiantes.obtener_por_id(estudiante_id)
+            if estudiante.estado_proceso == "REGISTRADO":
+                estudiante.estado_proceso = "AUTORIZADO"
+                self.db.commit()
+
+        return resultado
 
     def obtener_estado(self, estudiante_usuario_id: uuid.UUID) -> EstadoConsentimientoResponse:
         estudiante_id = self.estudiantes.obtener_estudiante_id_de_usuario(estudiante_usuario_id)

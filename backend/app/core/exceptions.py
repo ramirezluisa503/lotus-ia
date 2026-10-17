@@ -20,3 +20,11 @@ class AutorizacionIncompletaError(Exception):
 
 class EstudianteNoVinculadoError(Exception):
     """El acudiente no tiene ningún estudiante vinculado todavía."""
+
+
+class AreaAcademicaInvalidaError(Exception):
+    """El nombre de área académica enviado no existe en el catálogo."""
+
+
+class InstrumentoNoDisponibleError(Exception):
+    """No hay ningún instrumento psicométrico activo configurado."""

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Alert from "../components/Alert";
 import Button from "../components/Button";
 import Navbar from "../components/Navbar";
@@ -28,6 +28,7 @@ function EstadoFila({ ok, etiqueta }) {
 }
 
 function VistaEstudiante() {
+  const navigate = useNavigate();
   const [estado, setEstado] = useState(null);
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -90,10 +91,14 @@ function VistaEstudiante() {
       )}
 
       {estado?.puede_continuar && (
-        <Alert tipo="exito">
-          ¡Todo listo! Ya tienes la autorización completa. El cuestionario
-          estará disponible muy pronto.
-        </Alert>
+        <div className="space-y-3">
+          <Alert tipo="exito">
+            ¡Todo listo! Ya tienes la autorización completa.
+          </Alert>
+          <Button variant="primary" className="w-full" onClick={() => navigate("/cuestionario")}>
+            Empezar mi cuestionario
+          </Button>
+        </div>
       )}
 
       <Link to="/panel" className="block text-center text-sm font-medium text-teal hover:underline">
