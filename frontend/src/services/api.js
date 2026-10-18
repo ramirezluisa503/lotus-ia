@@ -18,7 +18,16 @@ export function mensajeDeError(error) {
     return "No pudimos conectarnos con el servidor. Verifica tu conexión e inténtalo de nuevo.";
   }
   const { status, data } = error.response;
-  if (data?.detail) return data.detail;
+
+  // FastAPI devuelve `detail` como string en nuestros errores propios, pero
+  // como una LISTA de objetos {msg, loc, ...} en los errores de validación
+  // automáticos de Pydantic. Nunca hay que renderizar esos objetos tal cual.
+  if (typeof data?.detail === "string") return data.detail;
+  if (Array.isArray(data?.detail)) {
+    const mensajes = data.detail.map((d) => d.msg).filter(Boolean);
+    if (mensajes.length) return mensajes.join(" ");
+  }
+
   if (status === 400 || status === 422) return "Revisa los campos marcados en rojo.";
   if (status === 401) return "Tu sesión terminó. Vuelve a iniciar sesión.";
   if (status === 429) return "Demasiados intentos. Espera unos minutos antes de volver a intentarlo.";

@@ -38,6 +38,16 @@ export default function Registro() {
   async function manejarEnvio(e) {
     e.preventDefault();
     setError("");
+
+    if (form.rol === "ESTUDIANTE" && !form.grado) {
+      setError("Selecciona tu grado (10° u 11°).");
+      return;
+    }
+    if (form.rol === "ACUDIENTE" && !form.correoEstudiante) {
+      setError("Indica el correo del estudiante al que vas a autorizar.");
+      return;
+    }
+
     setEnviando(true);
     try {
       await registrar({
