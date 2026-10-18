@@ -1,0 +1,16 @@
+Árbol de Decisión
+Hiperparámetros: {'max_depth': 15, 'min_samples_leaf': 1}
+
+              precision    recall  f1-score   support
+
+ Exactas/Ing       0.62      0.42      0.50        12
+       Salud       0.43      0.43      0.43         7
+    Sociales       0.83      0.83      0.83        35
+       Artes       0.76      0.94      0.84        17
+  Económicas       0.92      0.94      0.93        97
+   Educación       0.94      0.92      0.93        74
+     Técnico       0.80      0.80      0.80        40
+
+    accuracy                           0.87       282
+   macro avg       0.76      0.75      0.75       282
+weighted avg       0.86      0.87      0.86       282

@@ -1,0 +1,183 @@
+{
+  "orden_variables": [
+    "estu_genero",
+    "cole_area_ubicacion",
+    "cole_naturaleza",
+    "cole_caracter",
+    "cole_jornada",
+    "cole_depto_ubicacion",
+    "fami_estratovivienda",
+    "fami_personashogar",
+    "fami_tieneinternet",
+    "fami_tienecomputador",
+    "fami_tienelavadora",
+    "fami_tieneautomovil",
+    "fami_educacionpadre",
+    "fami_educacionmadre",
+    "punt_matematicas",
+    "punt_lectura_critica",
+    "punt_c_naturales",
+    "punt_sociales_ciudadanas",
+    "punt_ingles",
+    "punt_global",
+    "desemp_ingles",
+    "edad"
+  ],
+  "codificacion": {
+    "estu_genero": {
+      "M": 1,
+      "F": 0
+    },
+    "cole_area_ubicacion": {
+      "URBANO": 1,
+      "RURAL": 0
+    },
+    "cole_naturaleza": {
+      "OFICIAL": 0,
+      "NO OFICIAL": 1
+    },
+    "cole_caracter": {
+      "ACADÉMICO": 0,
+      "TÉCNICO": 1,
+      "TÉCNICO/ACADÉMICO": 2,
+      "NO APLICA": 3
+    },
+    "cole_jornada": {
+      "MAÑANA": 0,
+      "TARDE": 1,
+      "NOCHE": 2,
+      "COMPLETA": 3,
+      "SABATINA": 4,
+      "UNICA": 5
+    },
+    "cole_depto_ubicacion": {
+      "ANTIOQUIA": 0,
+      "BOGOTA": 1,
+      "RISARALDA": 2,
+      "SANTANDER": 3,
+      "VALLE": 4
+    },
+    "fami_tieneinternet": {
+      "Si": 1,
+      "No": 0
+    },
+    "fami_tienecomputador": {
+      "Si": 1,
+      "No": 0
+    },
+    "fami_tienelavadora": {
+      "Si": 1,
+      "No": 0
+    },
+    "fami_tieneautomovil": {
+      "Si": 1,
+      "No": 0
+    },
+    "fami_educacionpadre_y_madre": {
+      "Ninguno": 0,
+      "Primaria incompleta": 1,
+      "Primaria completa": 2,
+      "Secundaria (Bachillerato) incompleta": 3,
+      "Secundaria (Bachillerato) completa": 4,
+      "Técnica o tecnológica incompleta": 5,
+      "Técnica o tecnológica completa": 6,
+      "Educación profesional incompleta": 7,
+      "Educación profesional completa": 8,
+      "Postgrado": 9,
+      "No sabe": null
+    },
+    "desemp_ingles": {
+      "A-": 0,
+      "A1": 1,
+      "A2": 2,
+      "B1": 3,
+      "B+": 4
+    }
+  },
+  "variables_numericas_directas": {
+    "punt_matematicas": "puntaje ICFES 0-100",
+    "punt_lectura_critica": "puntaje ICFES 0-100",
+    "punt_c_naturales": "puntaje ICFES 0-100",
+    "punt_sociales_ciudadanas": "puntaje ICFES 0-100",
+    "punt_ingles": "puntaje ICFES 0-100",
+    "punt_global": "puntaje global ICFES 0-500",
+    "edad": "años (entero)",
+    "fami_personashogar": "número de personas; rangos tipo '3 a 4' se convierten al promedio (3.5)",
+    "fami_estratovivienda": "estrato 1-6"
+  },
+  "valor_si_falta_mediana": {
+    "estu_genero": 0.0,
+    "cole_area_ubicacion": 1.0,
+    "cole_naturaleza": 0.0,
+    "cole_caracter": 0.0,
+    "cole_jornada": 0.0,
+    "cole_depto_ubicacion": 2.0,
+    "fami_estratovivienda": 2.0,
+    "fami_personashogar": 3.5,
+    "fami_tieneinternet": 1.0,
+    "fami_tienecomputador": 1.0,
+    "fami_tienelavadora": 1.0,
+    "fami_tieneautomovil": 0.0,
+    "fami_educacionpadre": 3.0,
+    "fami_educacionmadre": 4.0,
+    "punt_matematicas": 52.0,
+    "punt_lectura_critica": 53.0,
+    "punt_c_naturales": 51.0,
+    "punt_sociales_ciudadanas": 51.0,
+    "punt_ingles": 51.0,
+    "punt_global": 255.0,
+    "desemp_ingles": 1.0,
+    "edad": 23.0
+  },
+  "columnas_scaler_en_orden": [
+    "punt_matematicas",
+    "punt_lectura_critica",
+    "punt_c_naturales",
+    "punt_sociales_ciudadanas",
+    "punt_ingles",
+    "punt_global",
+    "edad",
+    "fami_personashogar",
+    "fami_educacionpadre",
+    "fami_educacionmadre",
+    "fami_estratovivienda"
+  ],
+  "scaler_min": [
+    22.0,
+    23.0,
+    19.0,
+    16.0,
+    23.0,
+    139.0,
+    8.0,
+    1.5,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "scaler_max": [
+    100.0,
+    91.0,
+    100.0,
+    84.0,
+    100.0,
+    435.0,
+    2019.0,
+    7.5,
+    9.0,
+    9.0,
+    6.0
+  ],
+  "salida": {
+    "tipo": "entero 1-7 (no usa LabelEncoder)",
+    "areas": {
+      "1": "Ciencias exactas e ingeniería",
+      "2": "Ciencias de la salud",
+      "3": "Ciencias sociales y humanas",
+      "4": "Artes y diseño",
+      "5": "Ciencias económicas y administrativas",
+      "6": "Educación",
+      "7": "Técnico y tecnológico general"
+    }
+  }
+}

@@ -2,11 +2,16 @@ import Field, { inputClasses } from "../../components/Field";
 
 const NIVELES_EDUCATIVOS = [
   "Ninguno",
-  "Primaria",
-  "Secundaria",
-  "Técnico/Tecnólogo",
-  "Universitario",
-  "Posgrado",
+  "Primaria incompleta",
+  "Primaria completa",
+  "Secundaria (Bachillerato) incompleta",
+  "Secundaria (Bachillerato) completa",
+  "Técnica o tecnológica incompleta",
+  "Técnica o tecnológica completa",
+  "Educación profesional incompleta",
+  "Educación profesional completa",
+  "Postgrado",
+  "No sabe",
 ];
 
 function CampoSiNo({ etiqueta, valor, onChange }) {
@@ -135,6 +140,16 @@ export default function PasoSocioeconomico({ valores, onChange }) {
           etiqueta="¿Tienes computador en casa?"
           valor={valores.tiene_computador}
           onChange={(v) => onChange("tiene_computador", v)}
+        />
+        <CampoSiNo
+          etiqueta="¿Tienes lavadora en casa?"
+          valor={valores.tiene_lavadora}
+          onChange={(v) => onChange("tiene_lavadora", v)}
+        />
+        <CampoSiNo
+          etiqueta="¿Tienes automóvil en casa?"
+          valor={valores.tiene_automovil}
+          onChange={(v) => onChange("tiene_automovil", v)}
         />
         <CampoSiNo
           etiqueta="¿Recibes algún apoyo económico estatal?"

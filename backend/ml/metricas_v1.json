@@ -1,0 +1,33 @@
+{
+  "version": "1.0-arbol",
+  "algoritmo": "DecisionTreeClassifier",
+  "ruta_archivo": "ml/modelo_arbol_decision_v1.pkl",
+  "hiperparametros": {
+    "max_depth": 15,
+    "min_samples_leaf": 1,
+    "class_weight": "balanced",
+    "random_state": 42
+  },
+  "profundidad_real": 14,
+  "hojas": 173,
+  "exactitud": 0.8652,
+  "precision_macro": 0.7582,
+  "recall_macro": 0.7531,
+  "f1_macro": 0.7513,
+  "precision_ponderada": 0.8635,
+  "recall_ponderado": 0.8652,
+  "f1_ponderado": 0.8628,
+  "validacion_cruzada_f1_ponderado": 0.8375,
+  "datos": {
+    "estudiantes": 1409,
+    "entrenamiento": 1127,
+    "prueba": 282,
+    "division": "80/20 estratificada, random_state=42"
+  },
+  "entrenado_en": "2026-10-18",
+  "versiones": {
+    "scikit-learn": "1.7.2",
+    "joblib": "1.5.2",
+    "numpy": "2.3.5"
+  }
+}

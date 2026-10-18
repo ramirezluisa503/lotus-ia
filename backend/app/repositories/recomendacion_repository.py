@@ -2,13 +2,13 @@ import uuid
 
 from sqlalchemy.orm import Session
 
+from app.models.area_academica import AreaAcademica
+from app.models.datos_socioeconomicos import DatosSocioeconomicos
 from app.models.encuesta_satisfaccion import EncuestaSatisfaccion
+from app.models.estudiante import Estudiante
 from app.models.modelo_ml import ModeloMl
 from app.models.recomendacion import Recomendacion
 from app.models.rendimiento_academico import RendimientoAcademico
-from app.models.area_academica import AreaAcademica
-from app.models.pregunta import Pregunta
-from app.models.respuesta import Respuesta
 
 
 class RecomendacionRepository:
@@ -18,6 +18,12 @@ class RecomendacionRepository:
     def obtener_modelo_activo(self) -> ModeloMl | None:
         return self.db.query(ModeloMl).filter(ModeloMl.activo.is_(True)).first()
 
+    def obtener_estudiante(self, estudiante_id: uuid.UUID) -> Estudiante | None:
+        return self.db.get(Estudiante, estudiante_id)
+
+    def obtener_datos_socioeconomicos(self, estudiante_id: uuid.UUID) -> DatosSocioeconomicos | None:
+        return self.db.get(DatosSocioeconomicos, estudiante_id)
+
     def notas_por_area(self, estudiante_id: uuid.UUID) -> dict[str, float]:
         filas = (
             self.db.query(AreaAcademica.nombre, RendimientoAcademico.nota)
@@ -26,18 +32,6 @@ class RecomendacionRepository:
             .all()
         )
         return {nombre: float(nota) for nombre, nota in filas}
-
-    def puntajes_por_dimension(self, estudiante_id: uuid.UUID) -> dict[str, int]:
-        filas = (
-            self.db.query(Pregunta.dimension, Respuesta.valor)
-            .join(Respuesta, Respuesta.pregunta_id == Pregunta.id)
-            .filter(Respuesta.estudiante_id == estudiante_id)
-            .all()
-        )
-        puntajes: dict[str, int] = {}
-        for dimension, valor in filas:
-            puntajes[dimension] = puntajes.get(dimension, 0) + valor
-        return puntajes
 
     def guardar(self, recomendacion: Recomendacion) -> Recomendacion:
         self.db.add(recomendacion)

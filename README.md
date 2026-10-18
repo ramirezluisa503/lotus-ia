@@ -12,7 +12,7 @@ Autoras: Luisa Fernanda Ramírez Osorio, Mariana Rosero Medina.
 Lotus.IA/
 ├── frontend/   React + Vite + Tailwind CSS (interfaz web)
 ├── backend/    FastAPI + SQLAlchemy + PostgreSQL (API REST)
-├── ml/         Entrenamiento y modelos de Machine Learning (scikit-learn)
+│   └── ml/     Modelo de IA entrenado (Árbol de Decisión) y scripts de entrenamiento
 └── docs/       Documentación del proyecto (análisis, diseño, diagramas)
 ```
 
@@ -22,13 +22,14 @@ Etapa de Análisis y la Etapa de Diseño.
 ## Estado actual
 
 - [x] Estructura del repositorio
-- [x] Frontend inicial (landing page) con la paleta de marca Lotus.IA
-- [ ] Backend (FastAPI) y conexión a PostgreSQL
-- [ ] Módulo de autenticación y roles
-- [ ] Módulo de consentimiento/asentimiento
-- [ ] Módulo de cuestionarios
-- [ ] Capa de IA y módulo de recomendación
-- [ ] Oferta académica, becas y encuesta de satisfacción
+- [x] Frontend (landing, autenticación, cuestionarios, resultado, oferta, admin) con la paleta de marca Lotus.IA
+- [x] Backend (FastAPI) y conexión a PostgreSQL
+- [x] Módulo de autenticación y roles
+- [x] Módulo de consentimiento/asentimiento
+- [x] Módulo de cuestionarios
+- [x] Capa de IA y módulo de recomendación (Árbol de Decisión entrenado con ICFES Saber 11 — ver `backend/ml/README.md`)
+- [x] Oferta académica, becas y encuesta de satisfacción
+- [x] Panel de administración
 
 ## Frontend — cómo correrlo
 

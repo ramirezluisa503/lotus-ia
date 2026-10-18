@@ -10,6 +10,32 @@ from app.repositories.oferta_repository import OfertaRepository
 from app.repositories.recomendacion_repository import RecomendacionRepository
 from app.schemas.recomendacion import RecomendacionResponse
 
+# Traduce nuestros valores guardados en BD (sin tildes, estilo ENUM) a los
+# valores "crudos" exactos que espera app/ia/modelo.py (los mismos con que
+# se entrenó el árbol -- ver backend/ml/preprocesamiento_v1.json).
+_ZONA = {"URBANA": "URBANO", "RURAL": "RURAL"}
+_TIPO_INSTITUCION = {"PUBLICA": "OFICIAL", "PRIVADA": "NO OFICIAL"}
+_COLE_CARACTER = {
+    "ACADEMICO": "ACADÉMICO",
+    "TECNICO": "TÉCNICO",
+    "TECNICO_ACADEMICO": "TÉCNICO/ACADÉMICO",
+    "NO_APLICA": "NO APLICA",
+}
+_COLE_JORNADA = {
+    "MANANA": "MAÑANA", "TARDE": "TARDE", "NOCHE": "NOCHE",
+    "COMPLETA": "COMPLETA", "SABATINA": "SABATINA", "UNICA": "UNICA",
+}
+_GENERO = {"MASCULINO": "M", "FEMENINO": "F"}  # OTRO/PREFIERE_NO_DECIR -> None (mediana)
+_SI_NO = {True: "Si", False: "No"}
+
+AREA_ACADEMICA_A_MODELO = {
+    "Matemáticas": "punt_matematicas",
+    "Lectura crítica": "punt_lectura_critica",
+    "Ciencias naturales": "punt_c_naturales",
+    "Sociales y ciudadanas": "punt_sociales_ciudadanas",
+    "Inglés": "punt_ingles",
+}
+
 
 class RecomendacionService:
     def __init__(self, db: Session):
@@ -17,6 +43,51 @@ class RecomendacionService:
         self.repo = RecomendacionRepository(db)
         self.ofertas = OfertaRepository(db)
         self.estudiantes = EstudianteRepository(db)
+
+    def _armar_variables(self, estudiante_id: uuid.UUID) -> dict | None:
+        """Arma el diccionario que espera capa_ia.predecir(). Devuelve None
+        si todavía falta información obligatoria del cuestionario."""
+        estudiante = self.repo.obtener_estudiante(estudiante_id)
+        socioeconomico = self.repo.obtener_datos_socioeconomicos(estudiante_id)
+        notas = self.repo.notas_por_area(estudiante_id)
+
+        if (
+            estudiante is None
+            or socioeconomico is None
+            or not notas
+            or estudiante.puntaje_global_icfes is None
+            or estudiante.desempeno_ingles is None
+            or estudiante.cole_caracter is None
+            or estudiante.cole_jornada is None
+        ):
+            return None
+
+        puntajes = {
+            AREA_ACADEMICA_A_MODELO[nombre]: nota
+            for nombre, nota in notas.items()
+            if nombre in AREA_ACADEMICA_A_MODELO
+        }
+
+        return {
+            "estu_genero": _GENERO.get(estudiante.genero),
+            "edad": estudiante.edad,
+            "cole_area_ubicacion": _ZONA.get(estudiante.zona),
+            "cole_naturaleza": _TIPO_INSTITUCION.get(estudiante.tipo_institucion),
+            "cole_caracter": _COLE_CARACTER.get(estudiante.cole_caracter),
+            "cole_jornada": _COLE_JORNADA.get(estudiante.cole_jornada),
+            "cole_depto_ubicacion": "RISARALDA",  # alcance del proyecto: solo Pereira/Risaralda
+            "fami_estratovivienda": socioeconomico.estrato,
+            "fami_personashogar": socioeconomico.personas_hogar,
+            "fami_tieneinternet": _SI_NO.get(socioeconomico.tiene_internet),
+            "fami_tienecomputador": _SI_NO.get(socioeconomico.tiene_computador),
+            "fami_tienelavadora": _SI_NO.get(socioeconomico.tiene_lavadora),
+            "fami_tieneautomovil": _SI_NO.get(socioeconomico.tiene_automovil),
+            "fami_educacionpadre": socioeconomico.educacion_padre,
+            "fami_educacionmadre": socioeconomico.educacion_madre,
+            "punt_global": estudiante.puntaje_global_icfes,
+            "desemp_ingles": estudiante.desempeno_ingles,
+            **puntajes,
+        }
 
     def _a_response(self, r: Recomendacion) -> RecomendacionResponse:
         return RecomendacionResponse(
@@ -30,16 +101,15 @@ class RecomendacionService:
         )
 
     def generar(self, estudiante_id: uuid.UUID) -> RecomendacionResponse:
-        notas = self.repo.notas_por_area(estudiante_id)
-        puntajes = self.repo.puntajes_por_dimension(estudiante_id)
-        if not notas or not puntajes:
+        variables = self._armar_variables(estudiante_id)
+        if variables is None:
             raise DatosInsuficientesError()
 
         modelo_activo = self.repo.obtener_modelo_activo()
         if modelo_activo is None:
             raise ModeloNoDisponibleError()
 
-        prediccion = capa_ia.predecir({"notas": notas, "puntajes_riasec": puntajes})
+        prediccion = capa_ia.predecir(variables)
 
         area = self.ofertas.obtener_area_por_nombre(prediccion.area_nombre)
 

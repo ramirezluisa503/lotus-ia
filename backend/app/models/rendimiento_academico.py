@@ -17,4 +17,4 @@ class RendimientoAcademico(Base):
     area_id: Mapped[int] = mapped_column(
         SmallInteger, ForeignKey("app.areas_academicas.id"), primary_key=True
     )
-    nota: Mapped[float] = mapped_column(Numeric(2, 1), nullable=False)
+    nota: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)  # puntaje ICFES 0-100

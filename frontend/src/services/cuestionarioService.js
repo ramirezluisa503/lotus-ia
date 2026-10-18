@@ -1,7 +1,7 @@
 import api from "./api";
 
-export function guardarAcademico(notas) {
-  return api.put("/cuestionario/academico", { notas }).then((res) => res.data);
+export function guardarAcademico(datos) {
+  return api.put("/cuestionario/academico", datos).then((res) => res.data);
 }
 
 export function guardarSociodemografico(datos) {

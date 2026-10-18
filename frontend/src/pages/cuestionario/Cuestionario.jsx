@@ -67,16 +67,27 @@ export default function Cuestionario() {
           area,
           nota: Number(academico[area]),
         }));
-        if (notas.some((n) => !n.nota || n.nota < 1 || n.nota > 5)) {
+        const puntajeGlobal = Number(academico.puntaje_global_icfes);
+        if (
+          notas.some((n) => Number.isNaN(n.nota) || n.nota < 0 || n.nota > 100) ||
+          Number.isNaN(puntajeGlobal) || puntajeGlobal < 0 || puntajeGlobal > 500 ||
+          !academico.desempeno_ingles
+        ) {
           throw { response: { status: 400, data: {} } };
         }
-        await guardarAcademico(notas);
+        await guardarAcademico({
+          notas,
+          puntaje_global_icfes: puntajeGlobal,
+          desempeno_ingles: academico.desempeno_ingles,
+        });
       } else if (paso === 2) {
         await guardarSociodemografico({
           edad: Number(socio.edad),
           genero: socio.genero || null,
           zona: socio.zona,
           tipo_institucion: socio.tipo_institucion,
+          cole_caracter: socio.cole_caracter,
+          cole_jornada: socio.cole_jornada,
         });
       } else if (paso === 3) {
         await guardarSocioeconomico({
@@ -88,6 +99,8 @@ export default function Cuestionario() {
           ocupacion_hogar: economico.ocupacion_hogar || null,
           tiene_internet: economico.tiene_internet ?? null,
           tiene_computador: economico.tiene_computador ?? null,
+          tiene_lavadora: economico.tiene_lavadora ?? null,
+          tiene_automovil: economico.tiene_automovil ?? null,
           recibe_apoyo_estatal: economico.recibe_apoyo_estatal ?? null,
           trabaja: economico.trabaja ?? null,
         });

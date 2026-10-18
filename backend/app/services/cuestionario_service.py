@@ -26,8 +26,12 @@ class CuestionarioService:
             if area is None:
                 raise AreaAcademicaInvalidaError(item.area)
             self.repo.guardar_nota(estudiante_id, area.id, item.nota)
+
+        estudiante = self.repo.obtener_estudiante(estudiante_id)
+        estudiante.puntaje_global_icfes = datos.puntaje_global_icfes
+        estudiante.desempeno_ingles = datos.desempeno_ingles
         self.db.commit()
-        return self.repo.obtener_estudiante(estudiante_id).estado_proceso
+        return estudiante.estado_proceso
 
     def guardar_sociodemografico(
         self, estudiante_id: uuid.UUID, datos: DatosSociodemograficosRequest
@@ -37,6 +41,8 @@ class CuestionarioService:
         estudiante.genero = datos.genero
         estudiante.zona = datos.zona
         estudiante.tipo_institucion = datos.tipo_institucion
+        estudiante.cole_caracter = datos.cole_caracter
+        estudiante.cole_jornada = datos.cole_jornada
         self.db.commit()
         return estudiante.estado_proceso
 

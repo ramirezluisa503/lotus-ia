@@ -1,5 +1,21 @@
 import Field, { inputClasses } from "../../components/Field";
 
+const CARACTERES = [
+  { v: "ACADEMICO", t: "Académico" },
+  { v: "TECNICO", t: "Técnico" },
+  { v: "TECNICO_ACADEMICO", t: "Técnico/Académico" },
+  { v: "NO_APLICA", t: "No aplica" },
+];
+
+const JORNADAS = [
+  { v: "MANANA", t: "Mañana" },
+  { v: "TARDE", t: "Tarde" },
+  { v: "NOCHE", t: "Noche" },
+  { v: "COMPLETA", t: "Completa" },
+  { v: "SABATINA", t: "Sabatina" },
+  { v: "UNICA", t: "Única" },
+];
+
 export default function PasoSociodemografico({ valores, onChange }) {
   return (
     <div className="space-y-4">
@@ -60,6 +76,44 @@ export default function PasoSociodemografico({ valores, onChange }) {
           </option>
           <option value="PUBLICA">Pública</option>
           <option value="PRIVADA">Privada</option>
+        </select>
+      </Field>
+
+      <Field label="Carácter de tu colegio" id="cole_caracter">
+        <select
+          id="cole_caracter"
+          required
+          value={valores.cole_caracter ?? ""}
+          onChange={(e) => onChange("cole_caracter", e.target.value)}
+          className={inputClasses(false)}
+        >
+          <option value="" disabled>
+            Selecciona una opción
+          </option>
+          {CARACTERES.map((c) => (
+            <option key={c.v} value={c.v}>
+              {c.t}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <Field label="Jornada de tu colegio" id="cole_jornada">
+        <select
+          id="cole_jornada"
+          required
+          value={valores.cole_jornada ?? ""}
+          onChange={(e) => onChange("cole_jornada", e.target.value)}
+          className={inputClasses(false)}
+        >
+          <option value="" disabled>
+            Selecciona una opción
+          </option>
+          {JORNADAS.map((j) => (
+            <option key={j.v} value={j.v}>
+              {j.t}
+            </option>
+          ))}
         </select>
       </Field>
     </div>
