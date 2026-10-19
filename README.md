@@ -31,7 +31,63 @@ Etapa de Análisis y la Etapa de Diseño.
 - [x] Oferta académica, becas y encuesta de satisfacción
 - [x] Panel de administración
 
-## Frontend — cómo correrlo
+## Cómo correr el proyecto localmente
+
+Requisitos: Docker Desktop, Python 3.13, Node.js 20+.
+
+### 1. Clonar y entrar al repositorio
+
+```bash
+git clone https://github.com/ramirezluisa503/lotus-ia.git
+cd lotus-ia
+```
+
+### 2. Base de datos (PostgreSQL con Docker)
+
+```bash
+docker compose up -d
+```
+
+Esto crea el contenedor `lotusia_db` y aplica `backend/db/schema.sql` automáticamente
+la primera vez (si la base de datos ya existía de antes, corre también los
+`backend/db/migration_*.sql` pendientes a mano).
+
+### 3. Backend (FastAPI)
+
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate        # Windows (PowerShell/CMD)
+# source .venv/bin/activate   # Mac/Linux
+
+pip install -r requirements.txt
+```
+
+Copia `backend/.env.example` como `backend/.env` y genera tus propios valores
+(cada persona usa los suyos, no se comparten ni se suben al repo):
+
+```bash
+# Genera un FERNET_KEY:
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+# Genera un JWT_SECRET (puede ser cualquier texto largo y aleatorio):
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Luego corre el servidor:
+
+```bash
+python -m uvicorn app.main:app --port 8000 --reload
+```
+
+La API queda en http://localhost:8000/api. Para crear un usuario administrador
+(no hay registro público para ese rol):
+
+```bash
+python scripts/crear_admin.py --correo admin@lotusia.com --contrasena "TuClave123" --nombre "Admin"
+```
+
+### 4. Frontend
 
 ```bash
 cd frontend
