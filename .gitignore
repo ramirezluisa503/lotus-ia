@@ -21,3 +21,8 @@ ml/modelos/*.pkl
 !.vscode/extensions.json
 .idea/
 .DS_Store
+
+# Logs locales
+*.log
+backend/backend_out.log
+backend/backend_err.log

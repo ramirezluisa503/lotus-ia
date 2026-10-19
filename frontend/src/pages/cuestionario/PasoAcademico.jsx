@@ -11,12 +11,30 @@ export const AREAS_ACADEMICAS = [
 const NIVELES_INGLES = ["A-", "A1", "A2", "B1", "B+"];
 
 export default function PasoAcademico({ valores, onChange }) {
+  const esSimulacro = Boolean(valores.es_simulacro);
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-navy/60">
-        Ingresa tus resultados del ICFES Saber 11 (los puedes ver en tu
-        registro de resultados, del 0 al 100 por materia).
+        {esSimulacro
+          ? "Ingresa los resultados de tu simulacro o pre-ICFES más reciente (del 0 al 100 por materia)."
+          : "Ingresa tus resultados del ICFES Saber 11 (los puedes ver en tu registro de resultados, del 0 al 100 por materia)."}
       </p>
+
+      <label className="flex items-start gap-2 rounded-lg border border-navy/15 bg-navy/2 px-3 py-2.5 text-sm text-navy/70">
+        <input
+          type="checkbox"
+          className="mt-0.5"
+          checked={esSimulacro}
+          onChange={(e) => onChange("es_simulacro", e.target.checked)}
+        />
+        <span>
+          Aún no tengo el resultado oficial del ICFES (voy en grado 10 o
+          todavía no me lo entregan) y quiero usar mi puntaje de simulacro o
+          pre-ICFES mientras tanto.
+        </span>
+      </label>
+
       {AREAS_ACADEMICAS.map((area) => (
         <Field key={area} label={`${area} (0-100)`} id={`nota-${area}`}>
           <input

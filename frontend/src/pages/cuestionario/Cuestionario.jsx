@@ -79,6 +79,7 @@ export default function Cuestionario() {
           notas,
           puntaje_global_icfes: puntajeGlobal,
           desempeno_ingles: academico.desempeno_ingles,
+          es_simulacro: Boolean(academico.es_simulacro),
         });
       } else if (paso === 2) {
         await guardarSociodemografico({

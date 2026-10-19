@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import DatosInsuficientesError, ModeloNoDisponibleError
 from app.ia import modelo as capa_ia
 from app.models.recomendacion import Recomendacion
-from app.repositories.estudiante_repository import EstudianteRepository
 from app.repositories.oferta_repository import OfertaRepository
 from app.repositories.recomendacion_repository import RecomendacionRepository
 from app.schemas.recomendacion import RecomendacionResponse
@@ -42,7 +41,6 @@ class RecomendacionService:
         self.db = db
         self.repo = RecomendacionRepository(db)
         self.ofertas = OfertaRepository(db)
-        self.estudiantes = EstudianteRepository(db)
 
     def _armar_variables(self, estudiante_id: uuid.UUID) -> dict | None:
         """Arma el diccionario que espera capa_ia.predecir(). Devuelve None
@@ -113,17 +111,25 @@ class RecomendacionService:
 
         area = self.ofertas.obtener_area_por_nombre(prediccion.area_nombre)
 
+        estudiante = self.repo.obtener_estudiante(estudiante_id)
+        explicacion = prediccion.explicacion
+        if estudiante.es_puntaje_simulacro:
+            explicacion += (
+                " Esta recomendación se calculó con tu puntaje de simulacro o "
+                "pre-ICFES, no con el resultado oficial del ICFES Saber 11, así "
+                "que podría cambiar cuando ingreses tu puntaje real."
+            )
+
         recomendacion = Recomendacion(
             estudiante_id=estudiante_id,
             modelo_id=modelo_activo.id,
             area_id=area.id,
             nivel_formacion=prediccion.nivel_formacion,
             probabilidad=prediccion.probabilidad,
-            explicacion=prediccion.explicacion,
+            explicacion=explicacion,
         )
         guardada = self.repo.guardar(recomendacion)
 
-        estudiante = self.estudiantes.obtener_por_id(estudiante_id)
         if estudiante.estado_proceso in ("REGISTRADO", "AUTORIZADO", "DATOS_COMPLETOS"):
             estudiante.estado_proceso = "RECOMENDADO"
             self.db.commit()

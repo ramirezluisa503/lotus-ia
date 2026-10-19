@@ -30,6 +30,7 @@ class CuestionarioService:
         estudiante = self.repo.obtener_estudiante(estudiante_id)
         estudiante.puntaje_global_icfes = datos.puntaje_global_icfes
         estudiante.desempeno_ingles = datos.desempeno_ingles
+        estudiante.es_puntaje_simulacro = datos.es_simulacro
         self.db.commit()
         return estudiante.estado_proceso
 

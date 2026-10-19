@@ -31,6 +31,10 @@ class DatosAcademicosRequest(BaseModel):
     notas: list[NotaArea]
     puntaje_global_icfes: int = Field(ge=0, le=500)
     desempeno_ingles: DesempenoIngles
+    es_simulacro: bool = Field(
+        default=False,
+        description="True si los puntajes son de un simulacro/pre-ICFES y no del resultado oficial (p. ej. grado 10).",
+    )
 
 
 class DatosSociodemograficosRequest(BaseModel):

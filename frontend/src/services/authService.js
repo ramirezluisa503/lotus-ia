@@ -1,8 +1,26 @@
 import api from "./api";
 
-export function registrar({ nombre, correo, contrasena, rol, documento }) {
+export function registrar({
+  nombre,
+  correo,
+  contrasena,
+  rol,
+  documento,
+  grado,
+  correo_estudiante,
+  parentesco,
+}) {
   return api
-    .post("/auth/registro", { nombre, correo, contrasena, rol, documento })
+    .post("/auth/registro", {
+      nombre,
+      correo,
+      contrasena,
+      rol,
+      documento,
+      grado,
+      correo_estudiante,
+      parentesco,
+    })
     .then((res) => res.data);
 }
 

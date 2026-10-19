@@ -70,6 +70,9 @@ CREATE TABLE app.estudiantes (
   cole_jornada          VARCHAR(10) CHECK (cole_jornada IN ('MANANA','TARDE','NOCHE','COMPLETA','SABATINA','UNICA')),
   puntaje_global_icfes  SMALLINT CHECK (puntaje_global_icfes BETWEEN 0 AND 500),
   desempeno_ingles      VARCHAR(2) CHECK (desempeno_ingles IN ('A-','A1','A2','B1','B+')),
+  -- TRUE si los puntajes vienen de un simulacro/pre-ICFES (p. ej. grado 10,
+  -- que aún no presenta el Saber 11 real) en vez del resultado oficial.
+  es_puntaje_simulacro  BOOLEAN NOT NULL DEFAULT FALSE,
   estado_proceso    VARCHAR(15) NOT NULL DEFAULT 'REGISTRADO'
                      CHECK (estado_proceso IN ('REGISTRADO','AUTORIZADO','DATOS_COMPLETOS','RECOMENDADO')),
   creado_en         TIMESTAMPTZ NOT NULL DEFAULT now()
