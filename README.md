@@ -52,6 +52,17 @@ Esto crea el contenedor `lotusia_db` y aplica `backend/db/schema.sql` automátic
 la primera vez (si la base de datos ya existía de antes, corre también los
 `backend/db/migration_*.sql` pendientes a mano).
 
+Para tener datos de ejemplo (instituciones, carreras, becas, el test psicométrico
+y el modelo de IA activo), corre también los archivos `backend/db/seed_*.sql` —
+no se aplican solos, hay que correrlos a mano una vez:
+
+```bash
+cat backend/db/seed_instrumento_demo.sql | docker exec -i lotusia_db psql -U lotusia -d lotusia
+cat backend/db/seed_modelo_placeholder.sql | docker exec -i lotusia_db psql -U lotusia -d lotusia
+cat backend/db/seed_oferta_demo.sql | docker exec -i lotusia_db psql -U lotusia -d lotusia
+cat backend/db/seed_oferta_virtual.sql | docker exec -i lotusia_db psql -U lotusia -d lotusia
+```
+
 ### 3. Backend (FastAPI)
 
 ```bash
