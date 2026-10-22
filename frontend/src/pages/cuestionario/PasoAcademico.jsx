@@ -1,10 +1,10 @@
 import Field, { inputClasses } from "../../components/Field";
 
 export const AREAS_ACADEMICAS = [
-  "Matemáticas",
   "Lectura crítica",
-  "Ciencias naturales",
+  "Matemáticas",
   "Sociales y ciudadanas",
+  "Ciencias naturales",
   "Inglés",
 ];
 
