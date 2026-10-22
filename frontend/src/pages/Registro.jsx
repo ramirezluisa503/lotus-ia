@@ -29,24 +29,47 @@ export default function Registro() {
     parentesco: "MADRE",
   });
   const [error, setError] = useState("");
+  const [errores, setErrores] = useState({});
   const [enviando, setEnviando] = useState(false);
 
   function actualizar(campo, valor) {
     setForm((prev) => ({ ...prev, [campo]: valor }));
+    setErrores((prev) => ({ ...prev, [campo]: undefined }));
+  }
+
+  function validar() {
+    const err = {};
+    const correoValido = (valor) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor);
+
+    if (!form.nombre || form.nombre.trim().length < 2) {
+      err.nombre = "Ingresa tu nombre completo.";
+    }
+    if (!form.correo || !correoValido(form.correo)) {
+      err.correo = "Ingresa un correo válido.";
+    }
+    if (form.rol === "ESTUDIANTE" && !form.grado) {
+      err.grado = "Selecciona tu grado (10° u 11°).";
+    }
+    if (form.rol === "ACUDIENTE" && (!form.correoEstudiante || !correoValido(form.correoEstudiante))) {
+      err.correoEstudiante = "Indica un correo válido del estudiante.";
+    }
+    if (!form.contrasena || form.contrasena.length < 8) {
+      err.contrasena = "Debe tener al menos 8 caracteres.";
+    }
+    return err;
   }
 
   async function manejarEnvio(e) {
     e.preventDefault();
     setError("");
 
-    if (form.rol === "ESTUDIANTE" && !form.grado) {
-      setError("Selecciona tu grado (10° u 11°).");
+    const erroresForm = validar();
+    if (Object.keys(erroresForm).length > 0) {
+      setErrores(erroresForm);
+      setError("Revisa los campos marcados en rojo.");
       return;
     }
-    if (form.rol === "ACUDIENTE" && !form.correoEstudiante) {
-      setError("Indica el correo del estudiante al que vas a autorizar.");
-      return;
-    }
+    setErrores({});
 
     setEnviando(true);
     try {
@@ -110,7 +133,7 @@ export default function Registro() {
             </div>
           </Field>
 
-          <Field label="Nombre completo" id="nombre">
+          <Field label="Nombre completo" id="nombre" error={errores.nombre}>
             <input
               id="nombre"
               type="text"
@@ -119,12 +142,12 @@ export default function Registro() {
               autoComplete="name"
               value={form.nombre}
               onChange={(e) => actualizar("nombre", e.target.value)}
-              className={inputClasses(false)}
+              className={inputClasses(Boolean(errores.nombre))}
               placeholder="Tu nombre y apellido"
             />
           </Field>
 
-          <Field label="Correo electrónico" id="correo">
+          <Field label="Correo electrónico" id="correo" error={errores.correo}>
             <input
               id="correo"
               type="email"
@@ -132,14 +155,18 @@ export default function Registro() {
               autoComplete="email"
               value={form.correo}
               onChange={(e) => actualizar("correo", e.target.value)}
-              className={inputClasses(false)}
+              className={inputClasses(Boolean(errores.correo))}
               placeholder="tu@correo.com"
             />
           </Field>
 
           {form.rol === "ESTUDIANTE" && (
-            <Field label="¿En qué grado estás?" id="grado">
-              <div className="grid grid-cols-2 gap-2">
+            <Field label="¿En qué grado estás?" id="grado" error={errores.grado}>
+              <div
+                className={`grid grid-cols-2 gap-2 rounded-lg ${
+                  errores.grado ? "ring-2 ring-red-400" : ""
+                }`}
+              >
                 {[10, 11].map((grado) => (
                   <button
                     key={grado}
@@ -163,6 +190,7 @@ export default function Registro() {
               <Field
                 label="Correo del estudiante"
                 id="correoEstudiante"
+                error={errores.correoEstudiante}
               >
                 <input
                   id="correoEstudiante"
@@ -170,7 +198,7 @@ export default function Registro() {
                   required
                   value={form.correoEstudiante}
                   onChange={(e) => actualizar("correoEstudiante", e.target.value)}
-                  className={inputClasses(false)}
+                  className={inputClasses(Boolean(errores.correoEstudiante))}
                   placeholder="correo@del-estudiante.com"
                 />
                 <p className="mt-1.5 text-xs text-navy/50">
@@ -206,7 +234,7 @@ export default function Registro() {
             </>
           )}
 
-          <Field label="Contraseña" id="contrasena">
+          <Field label="Contraseña" id="contrasena" error={errores.contrasena}>
             <input
               id="contrasena"
               type="password"
@@ -215,7 +243,7 @@ export default function Registro() {
               autoComplete="new-password"
               value={form.contrasena}
               onChange={(e) => actualizar("contrasena", e.target.value)}
-              className={inputClasses(false)}
+              className={inputClasses(Boolean(errores.contrasena))}
               placeholder="Mínimo 8 caracteres"
             />
           </Field>
