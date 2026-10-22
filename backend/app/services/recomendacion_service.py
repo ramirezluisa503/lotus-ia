@@ -5,9 +5,11 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import DatosInsuficientesError, ModeloNoDisponibleError
 from app.ia import modelo as capa_ia
 from app.models.recomendacion import Recomendacion
+from app.repositories.estudiante_repository import EstudianteRepository
 from app.repositories.oferta_repository import OfertaRepository
 from app.repositories.recomendacion_repository import RecomendacionRepository
 from app.schemas.recomendacion import RecomendacionResponse
+from app.services.notificacion_service import crear_notificacion
 
 # Traduce nuestros valores guardados en BD (sin tildes, estilo ENUM) a los
 # valores "crudos" exactos que espera app/ia/modelo.py (los mismos con que
@@ -41,6 +43,7 @@ class RecomendacionService:
         self.db = db
         self.repo = RecomendacionRepository(db)
         self.ofertas = OfertaRepository(db)
+        self.estudiantes = EstudianteRepository(db)
 
     def _armar_variables(self, estudiante_id: uuid.UUID) -> dict | None:
         """Arma el diccionario que espera capa_ia.predecir(). Devuelve None
@@ -132,8 +135,18 @@ class RecomendacionService:
 
         if estudiante.estado_proceso in ("REGISTRADO", "AUTORIZADO", "DATOS_COMPLETOS"):
             estudiante.estado_proceso = "RECOMENDADO"
-            self.db.commit()
 
+        usuario_id = self.estudiantes.obtener_usuario_id_de_estudiante(estudiante_id)
+        if usuario_id is not None:
+            crear_notificacion(
+                self.db,
+                usuario_id,
+                "RECOMENDACION_LISTA",
+                "Ya tienes tu recomendación vocacional lista.",
+                "/resultado",
+            )
+
+        self.db.commit()
         return self._a_response(guardada)
 
     def historial(self, estudiante_id: uuid.UUID) -> list[RecomendacionResponse]:

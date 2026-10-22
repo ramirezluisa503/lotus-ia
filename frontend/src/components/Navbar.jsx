@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Button from "./Button";
 import Logo from "./Logo";
+import Notificaciones from "./Notificaciones";
 
 export default function Navbar() {
   const { usuario, logout } = useAuth();
@@ -19,6 +20,7 @@ export default function Navbar() {
         <nav className="flex items-center gap-2 sm:gap-3">
           {usuario ? (
             <>
+              <Notificaciones />
               <span className="hidden text-sm text-navy/60 sm:inline">
                 {usuario.correo}
               </span>

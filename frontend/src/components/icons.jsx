@@ -70,6 +70,19 @@ export function IconArrowRight({ className = base }) {
   );
 }
 
+export function IconBell({ className = base }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className={className}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 10a6 6 0 1 1 12 0c0 3.4 1 5.3 1.8 6.3.4.5 0 1.2-.6 1.2H4.8c-.6 0-1-.7-.6-1.2C5 15.3 6 13.4 6 10Z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.5 20a2.5 2.5 0 0 0 5 0" />
+    </svg>
+  );
+}
+
 export function IconSparkles({ className = base }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className={className}>

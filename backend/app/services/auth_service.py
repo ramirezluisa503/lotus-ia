@@ -26,8 +26,11 @@ from app.repositories.rol_repository import RolRepository
 from app.repositories.usuario_repository import UsuarioRepository
 from app.repositories.vinculo_acudiente_repository import VinculoAcudienteRepository
 from app.schemas.auth import LoginRequest, RegistroRequest
+from app.services.notificacion_service import crear_notificacion
 
 MAX_INTENTOS_FALLIDOS = 5
+
+_PARENTESCO_ETIQUETA = {"MADRE": "Tu madre", "PADRE": "Tu padre", "TUTOR_LEGAL": "Tu tutor legal"}
 
 
 class AuthService:
@@ -69,6 +72,14 @@ class AuthService:
                 acudiente_id=usuario.id,
                 estudiante_usuario_id=estudiante_usuario.id,
                 parentesco=datos.parentesco,
+            )
+            etiqueta = _PARENTESCO_ETIQUETA.get(datos.parentesco, "Un acudiente")
+            crear_notificacion(
+                self.db,
+                estudiante_usuario.id,
+                "ACUDIENTE_REGISTRADO",
+                f"{etiqueta} se registró en Lotus.IA y debe autorizar tu participación.",
+                "/autorizacion",
             )
 
         self.db.commit()

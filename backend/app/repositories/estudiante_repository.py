@@ -24,3 +24,7 @@ class EstudianteRepository:
     def obtener_estudiante_id_de_usuario(self, usuario_id: uuid.UUID) -> uuid.UUID | None:
         seudonimo = self.db.get(Seudonimo, usuario_id)
         return seudonimo.estudiante_id if seudonimo else None
+
+    def obtener_usuario_id_de_estudiante(self, estudiante_id: uuid.UUID) -> uuid.UUID | None:
+        seudonimo = self.db.query(Seudonimo).filter(Seudonimo.estudiante_id == estudiante_id).first()
+        return seudonimo.usuario_id if seudonimo else None

@@ -8,6 +8,7 @@ from app.repositories.consentimiento_repository import ConsentimientoRepository
 from app.repositories.estudiante_repository import EstudianteRepository
 from app.repositories.vinculo_acudiente_repository import VinculoAcudienteRepository
 from app.schemas.consentimiento import EstadoConsentimientoResponse
+from app.services.notificacion_service import crear_notificacion
 
 VERSION_TEXTO_VIGENTE = "1.0"
 
@@ -49,13 +50,22 @@ class ConsentimientoService:
             estudiante_id, "CONSENTIMIENTO", aceptado, acudiente_id=acudiente_usuario_id
         )
 
+        mensaje = (
+            "Tu acudiente autorizó tu participación en Lotus.IA."
+            if aceptado
+            else "Tu acudiente no autorizó tu participación por ahora."
+        )
+        crear_notificacion(
+            self.db, estudiante_usuario_id, "ACUDIENTE_CONSENTIMIENTO", mensaje, "/autorizacion"
+        )
+
         estado = self.obtener_estado(estudiante_usuario_id)
         if estado.puede_continuar:
             estudiante = self.estudiantes.obtener_por_id(estudiante_id)
             if estudiante.estado_proceso == "REGISTRADO":
                 estudiante.estado_proceso = "AUTORIZADO"
-                self.db.commit()
 
+        self.db.commit()
         return resultado
 
     def otorgar_asentimiento_estudiante(
