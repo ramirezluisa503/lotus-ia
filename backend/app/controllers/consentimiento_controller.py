@@ -51,3 +51,17 @@ def estado_autorizacion(
     db: Session = Depends(get_db),
 ):
     return ConsentimientoService(db).obtener_estado(usuario.id)
+
+
+@router.get("/estado-acudiente", response_model=EstadoConsentimientoResponse)
+def estado_autorizacion_acudiente(
+    usuario: UsuarioActual = Depends(requerir_rol("ACUDIENTE")),
+    db: Session = Depends(get_db),
+):
+    try:
+        return ConsentimientoService(db).obtener_estado_para_acudiente(usuario.id)
+    except EstudianteNoVinculadoError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No tienes ningún estudiante vinculado a tu cuenta.",
+        )

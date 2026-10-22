@@ -11,3 +11,7 @@ export function otorgarAsentimientoEstudiante(aceptado) {
 export function obtenerEstadoAutorizacion() {
   return api.get("/consentimientos/estado").then((res) => res.data);
 }
+
+export function obtenerEstadoAutorizacionAcudiente() {
+  return api.get("/consentimientos/estado-acudiente").then((res) => res.data);
+}

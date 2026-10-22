@@ -73,6 +73,12 @@ class ConsentimientoService:
 
         return resultado
 
+    def obtener_estado_para_acudiente(self, acudiente_usuario_id: uuid.UUID) -> EstadoConsentimientoResponse:
+        estudiante_usuario_id = self.vinculos.obtener_estudiante_vinculado(acudiente_usuario_id)
+        if estudiante_usuario_id is None:
+            raise EstudianteNoVinculadoError()
+        return self.obtener_estado(estudiante_usuario_id)
+
     def obtener_estado(self, estudiante_usuario_id: uuid.UUID) -> EstadoConsentimientoResponse:
         estudiante_id = self.estudiantes.obtener_estudiante_id_de_usuario(estudiante_usuario_id)
 
