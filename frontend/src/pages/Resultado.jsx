@@ -5,6 +5,7 @@ import Button from "../components/Button";
 import Navbar from "../components/Navbar";
 import { IconHeart, IconShield, IconSparkles } from "../components/icons";
 import { mensajeDeError } from "../services/api";
+import { obtenerPerfilPsicometrico } from "../services/cuestionarioService";
 import { calificarRecomendacion } from "../services/encuestaService";
 import { obtenerHistorialRecomendaciones } from "../services/recomendacionService";
 
@@ -13,6 +14,51 @@ const NIVEL_ETIQUETA = {
   TECNOLOGICO: "Tecnológico",
   UNIVERSITARIO: "Universitario",
 };
+
+const DIMENSION_ETIQUETA = {
+  REALISTA: "Realista",
+  INVESTIGADOR: "Investigador",
+  ARTISTICO: "Artístico",
+  SOCIAL: "Social",
+  EMPRENDEDOR: "Emprendedor",
+  CONVENCIONAL: "Convencional",
+};
+
+function PerfilPsicometrico({ dimensiones }) {
+  if (!dimensiones || dimensiones.length === 0) return null;
+
+  const dominantes = dimensiones
+    .filter((d) => d.es_dominante)
+    .map((d) => DIMENSION_ETIQUETA[d.dimension] ?? d.dimension)
+    .join(" y ");
+
+  return (
+    <div className="mt-6 rounded-2xl border border-navy/10 p-4">
+      <p className="text-sm font-medium text-navy">Tu perfil de intereses</p>
+      <p className="mt-0.5 text-xs text-navy/50">
+        Según tus respuestas al test, tu interés más marcado es: <strong>{dominantes}</strong>
+      </p>
+      <div className="mt-3 space-y-2">
+        {dimensiones.map((d) => (
+          <div key={d.dimension}>
+            <div className="flex items-center justify-between text-xs">
+              <span className={d.es_dominante ? "font-semibold text-navy" : "text-navy/60"}>
+                {DIMENSION_ETIQUETA[d.dimension] ?? d.dimension}
+              </span>
+              <span className="text-navy/40">{d.promedio.toFixed(1)}/5</span>
+            </div>
+            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ice">
+              <div
+                className={`h-full rounded-full ${d.es_dominante ? "bg-teal" : "bg-navy/20"}`}
+                style={{ width: `${(d.promedio / 5) * 100}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function EncuestaSatisfaccion({ recomendacionId, yaCalificada }) {
   const [calificacion, setCalificacion] = useState(0);
@@ -80,12 +126,19 @@ function EncuestaSatisfaccion({ recomendacionId, yaCalificada }) {
 
 export default function Resultado() {
   const [recomendacion, setRecomendacion] = useState(null);
+  const [perfil, setPerfil] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    obtenerHistorialRecomendaciones()
-      .then((lista) => setRecomendacion(lista[0] ?? null))
+    Promise.all([
+      obtenerHistorialRecomendaciones().then((lista) => lista[0] ?? null),
+      obtenerPerfilPsicometrico().catch(() => ({ dimensiones: [] })),
+    ])
+      .then(([primeraRecomendacion, perfilPsicometrico]) => {
+        setRecomendacion(primeraRecomendacion);
+        setPerfil(perfilPsicometrico.dimensiones);
+      })
       .catch((err) => setError(mensajeDeError(err)))
       .finally(() => setCargando(false));
   }, []);
@@ -141,6 +194,8 @@ export default function Resultado() {
               )}
 
               <p className="mt-4 text-sm text-navy/70">{recomendacion.explicacion}</p>
+
+              <PerfilPsicometrico dimensiones={perfil} />
 
               <p className="mt-4 flex items-start gap-2 text-xs text-navy/50">
                 <IconShield className="mt-0.5 h-4 w-4 shrink-0" />

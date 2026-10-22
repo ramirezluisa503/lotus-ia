@@ -87,3 +87,13 @@ class RespuestasPsicometricoRequest(BaseModel):
 class PasoGuardadoResponse(BaseModel):
     ok: bool = True
     estado_proceso: str
+
+
+class DimensionPuntaje(BaseModel):
+    dimension: str
+    promedio: float
+    es_dominante: bool
+
+
+class PerfilPsicometricoResponse(BaseModel):
+    dimensiones: list[DimensionPuntaje]

@@ -12,6 +12,7 @@ from app.schemas.cuestionario import (
     DatosSocioeconomicosRequest,
     InstrumentoActivoResponse,
     PasoGuardadoResponse,
+    PerfilPsicometricoResponse,
     RespuestasPsicometricoRequest,
 )
 from app.services.cuestionario_service import CuestionarioService
@@ -54,6 +55,14 @@ def guardar_socioeconomico(
 ):
     estado = CuestionarioService(db).guardar_socioeconomico(estudiante_id, datos)
     return PasoGuardadoResponse(estado_proceso=estado)
+
+
+@cuestionario_router.get("/psicometrico/perfil", response_model=PerfilPsicometricoResponse)
+def perfil_psicometrico(
+    estudiante_id: uuid.UUID = Depends(requerir_estudiante_autorizado),
+    db: Session = Depends(get_db),
+):
+    return CuestionarioService(db).obtener_perfil_psicometrico(estudiante_id)
 
 
 @instrumentos_router.get("/activo", response_model=InstrumentoActivoResponse)

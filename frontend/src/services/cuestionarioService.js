@@ -19,3 +19,7 @@ export function obtenerInstrumentoActivo() {
 export function guardarPsicometrico(respuestas) {
   return api.put("/cuestionario/psicometrico", { respuestas }).then((res) => res.data);
 }
+
+export function obtenerPerfilPsicometrico() {
+  return api.get("/cuestionario/psicometrico/perfil").then((res) => res.data);
+}

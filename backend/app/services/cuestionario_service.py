@@ -9,7 +9,9 @@ from app.schemas.cuestionario import (
     DatosAcademicosRequest,
     DatosSociodemograficosRequest,
     DatosSocioeconomicosRequest,
+    DimensionPuntaje,
     InstrumentoActivoResponse,
+    PerfilPsicometricoResponse,
     PreguntaResponse,
     RespuestasPsicometricoRequest,
 )
@@ -33,6 +35,18 @@ class CuestionarioService:
         estudiante.es_puntaje_simulacro = datos.es_simulacro
         self.db.commit()
         return estudiante.estado_proceso
+
+    def obtener_perfil_psicometrico(self, estudiante_id: uuid.UUID) -> PerfilPsicometricoResponse:
+        promedios = self.repo.promedio_por_dimension(estudiante_id)
+        if not promedios:
+            return PerfilPsicometricoResponse(dimensiones=[])
+
+        maximo = max(promedio for _, promedio in promedios)
+        dimensiones = [
+            DimensionPuntaje(dimension=dimension, promedio=round(promedio, 2), es_dominante=promedio == maximo)
+            for dimension, promedio in sorted(promedios, key=lambda d: d[1], reverse=True)
+        ]
+        return PerfilPsicometricoResponse(dimensiones=dimensiones)
 
     def guardar_sociodemografico(
         self, estudiante_id: uuid.UUID, datos: DatosSociodemograficosRequest

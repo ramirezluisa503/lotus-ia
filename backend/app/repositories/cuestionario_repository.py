@@ -80,3 +80,15 @@ class CuestionarioRepository:
             .filter(Respuesta.estudiante_id == estudiante_id, Pregunta.instrumento_id == instrumento_id)
             .count()
         )
+
+    def promedio_por_dimension(self, estudiante_id: uuid.UUID) -> list[tuple[str, float]]:
+        from sqlalchemy import func
+
+        filas = (
+            self.db.query(Pregunta.dimension, func.avg(Respuesta.valor))
+            .join(Respuesta, Respuesta.pregunta_id == Pregunta.id)
+            .filter(Respuesta.estudiante_id == estudiante_id)
+            .group_by(Pregunta.dimension)
+            .all()
+        )
+        return [(dimension, float(promedio)) for dimension, promedio in filas]
