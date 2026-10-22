@@ -1,6 +1,12 @@
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
 export default function Logo({ className = "" }) {
+  const { usuario } = useAuth();
+  const destino = !usuario ? "/" : usuario.rol === "ADMINISTRADOR" ? "/admin" : "/panel";
+
   return (
-    <a href="/" className={`flex items-center gap-2 ${className}`}>
+    <Link to={destino} className={`flex items-center gap-2 ${className}`}>
       <svg viewBox="0 0 100 100" className="h-8 w-8 shrink-0">
         <path d="M50 50 L56.26 5.44 A45 45 0 0 1 94.32 42.19 Z" fill="#7AC174" />
         <path d="M50 50 L94.32 42.19 A45 45 0 0 1 78.93 84.47 Z" fill="#3C9142" />
@@ -19,6 +25,6 @@ export default function Logo({ className = "" }) {
         <span className="text-teal">Lotus</span>
         <span className="text-navy">.IA</span>
       </span>
-    </a>
+    </Link>
   );
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Button from "../components/Button";
 import Navbar from "../components/Navbar";
-import { IconShield, IconSparkles } from "../components/icons";
+import { IconBrain, IconHome, IconShield, IconSparkles } from "../components/icons";
 import { useAuth } from "../context/AuthContext";
 import { obtenerEstadoAutorizacion } from "../services/consentimientoService";
 
@@ -11,6 +11,27 @@ const ROL_ETIQUETA = {
   ACUDIENTE: "Acudiente",
   ADMINISTRADOR: "Administrador",
 };
+
+const INFO_ACUDIENTE = [
+  {
+    icon: IconBrain,
+    title: "¿Qué es Lotus.IA?",
+    description:
+      "Un proyecto piloto de orientación vocacional para estudiantes de grado 10° y 11° en Pereira. A partir del desempeño académico, un test de intereses y el contexto del estudiante, una inteligencia artificial le sugiere un área de conocimiento y un nivel de formación.",
+  },
+  {
+    icon: IconShield,
+    title: "¿Por qué se necesita tu autorización?",
+    description:
+      "Como el estudiante a tu cargo es menor de edad, la ley (1581 de 2012) exige tu consentimiento antes de usar su información. Sin tu autorización, el proceso queda bloqueado y el estudiante no puede avanzar.",
+  },
+  {
+    icon: IconHome,
+    title: "¿Cómo se protegen sus datos?",
+    description:
+      "El nombre y documento del estudiante se cifran y se guardan separados de sus respuestas: la IA nunca ve su identidad, solo un código anónimo. Puedes cambiar tu decisión y revocar la autorización cuando quieras.",
+  },
+];
 
 export default function Panel() {
   const { usuario, logout } = useAuth();
@@ -39,11 +60,12 @@ export default function Panel() {
           </span>
 
           <h1 className="mt-4 text-xl font-semibold text-navy">
-            ¡Hola! Tu sesión está activa
+            {usuario?.rol === "ACUDIENTE" ? "¡Bienvenido/a a Lotus.IA!" : "¡Hola! Tu sesión está activa"}
           </h1>
           <p className="mt-1 text-sm text-navy/60">
-            Esto confirma que el inicio de sesión y los permisos por rol ya
-            funcionan de punta a punta.
+            {usuario?.rol === "ACUDIENTE"
+              ? "Aquí puedes revisar de qué trata la plataforma y gestionar tu autorización."
+              : "Esto confirma que el inicio de sesión y los permisos por rol ya funcionan de punta a punta."}
           </p>
 
           <dl className="mt-6 space-y-3 rounded-xl bg-ice/60 p-4 text-sm">
@@ -105,23 +127,41 @@ export default function Panel() {
           )}
 
           {usuario?.rol === "ACUDIENTE" && (
-            <div className="mt-4 rounded-xl border border-navy/10 p-4">
-              <p className="text-sm font-medium text-navy">
-                Autorización del estudiante a tu cargo
-              </p>
-              <Link
-                to="/autorizacion"
-                className="mt-3 inline-block text-sm font-medium text-teal hover:underline"
-              >
-                Ir a autorizar →
-              </Link>
-            </div>
+            <>
+              <div className="mt-6 space-y-3">
+                {INFO_ACUDIENTE.map(({ icon: Icon, title, description }) => (
+                  <div key={title} className="flex gap-3 rounded-xl border border-navy/10 p-4">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal/10 text-teal">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-navy">{title}</p>
+                      <p className="mt-0.5 text-xs text-navy/60">{description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 rounded-xl border border-navy/10 p-4">
+                <p className="text-sm font-medium text-navy">
+                  Autorización del estudiante a tu cargo
+                </p>
+                <Link
+                  to="/autorizacion"
+                  className="mt-3 inline-block text-sm font-medium text-teal hover:underline"
+                >
+                  Ir a autorizar →
+                </Link>
+              </div>
+            </>
           )}
 
-          <p className="mt-6 flex items-center gap-2 text-xs text-navy/50">
-            <IconShield className="h-4 w-4 shrink-0" />
-            Próximamente: tu recomendación vocacional va a aparecer aquí.
-          </p>
+          {usuario?.rol === "ESTUDIANTE" && !estado?.puede_continuar && (
+            <p className="mt-6 flex items-center gap-2 text-xs text-navy/50">
+              <IconShield className="h-4 w-4 shrink-0" />
+              Próximamente: tu recomendación vocacional va a aparecer aquí.
+            </p>
+          )}
 
           <Button variant="secondary" className="mt-6 w-full" onClick={manejarSalir}>
             Cerrar sesión
