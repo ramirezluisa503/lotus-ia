@@ -32,6 +32,7 @@ export default function Cuestionario() {
   const [academico, setAcademico] = useState({});
   const [socio, setSocio] = useState({});
   const [economico, setEconomico] = useState({});
+  const [errores, setErrores] = useState({});
   const [preguntas, setPreguntas] = useState([]);
   const [cargandoPreguntas, setCargandoPreguntas] = useState(false);
   const [respuestas, setRespuestas] = useState({});
@@ -58,8 +59,64 @@ export default function Cuestionario() {
     }
   }, [paso, preguntas.length]);
 
+  function validarPaso1() {
+    const err = {};
+    AREAS_ACADEMICAS.forEach((area) => {
+      const valor = academico[area];
+      const n = Number(valor);
+      if (valor === undefined || valor === "") err[area] = "Ingresa un número.";
+      else if (Number.isNaN(n) || n < 0 || n > 100) err[area] = "Debe estar entre 0 y 100.";
+    });
+    const puntajeGlobal = Number(academico.puntaje_global_icfes);
+    if (academico.puntaje_global_icfes === undefined || academico.puntaje_global_icfes === "") {
+      err.puntaje_global_icfes = "Ingresa un número.";
+    } else if (Number.isNaN(puntajeGlobal) || puntajeGlobal < 0 || puntajeGlobal > 500) {
+      err.puntaje_global_icfes = "Debe estar entre 0 y 500.";
+    }
+    if (!academico.desempeno_ingles) err.desempeno_ingles = "Selecciona una opción.";
+    return err;
+  }
+
+  function validarPaso2() {
+    const err = {};
+    const edad = Number(socio.edad);
+    if (socio.edad === undefined || socio.edad === "") err.edad = "Ingresa tu edad.";
+    else if (Number.isNaN(edad) || edad < 13 || edad > 21) err.edad = "Debe estar entre 13 y 21 años.";
+    if (!socio.zona) err.zona = "Selecciona una opción.";
+    if (!socio.tipo_institucion) err.tipo_institucion = "Selecciona una opción.";
+    if (!socio.cole_caracter) err.cole_caracter = "Selecciona una opción.";
+    if (!socio.cole_jornada) err.cole_jornada = "Selecciona una opción.";
+    return err;
+  }
+
+  function validarPaso3() {
+    const err = {};
+    if (economico.estrato) {
+      const estrato = Number(economico.estrato);
+      if (Number.isNaN(estrato) || estrato < 0 || estrato > 6) err.estrato = "Debe estar entre 0 y 6.";
+    }
+    if (economico.personas_hogar) {
+      const personas = Number(economico.personas_hogar);
+      if (Number.isNaN(personas) || personas < 1 || personas > 20) {
+        err.personas_hogar = "Debe estar entre 1 y 20.";
+      }
+    }
+    return err;
+  }
+
   async function manejarSiguiente() {
     setError("");
+
+    const erroresPaso =
+      paso === 1 ? validarPaso1() : paso === 2 ? validarPaso2() : paso === 3 ? validarPaso3() : {};
+
+    if (Object.keys(erroresPaso).length > 0) {
+      setErrores(erroresPaso);
+      setError("Revisa los campos marcados en rojo.");
+      return;
+    }
+    setErrores({});
+
     setGuardando(true);
     try {
       if (paso === 1) {
@@ -67,30 +124,15 @@ export default function Cuestionario() {
           area,
           nota: Number(academico[area]),
         }));
-        const puntajeGlobal = Number(academico.puntaje_global_icfes);
-        if (
-          notas.some((n) => Number.isNaN(n.nota) || n.nota < 0 || n.nota > 100) ||
-          Number.isNaN(puntajeGlobal) || puntajeGlobal < 0 || puntajeGlobal > 500 ||
-          !academico.desempeno_ingles
-        ) {
-          throw { response: { status: 400, data: {} } };
-        }
         await guardarAcademico({
           notas,
-          puntaje_global_icfes: puntajeGlobal,
+          puntaje_global_icfes: Number(academico.puntaje_global_icfes),
           desempeno_ingles: academico.desempeno_ingles,
           es_simulacro: Boolean(academico.es_simulacro),
         });
       } else if (paso === 2) {
-        const edad = Number(socio.edad);
-        if (
-          Number.isNaN(edad) || edad < 13 || edad > 21 ||
-          !socio.zona || !socio.tipo_institucion || !socio.cole_caracter || !socio.cole_jornada
-        ) {
-          throw { response: { status: 400, data: {} } };
-        }
         await guardarSociodemografico({
-          edad,
+          edad: Number(socio.edad),
           genero: socio.genero || null,
           zona: socio.zona,
           tipo_institucion: socio.tipo_institucion,
@@ -98,18 +140,10 @@ export default function Cuestionario() {
           cole_jornada: socio.cole_jornada,
         });
       } else if (paso === 3) {
-        const estrato = economico.estrato ? Number(economico.estrato) : null;
-        const personasHogar = economico.personas_hogar ? Number(economico.personas_hogar) : null;
-        if (
-          (estrato !== null && (Number.isNaN(estrato) || estrato < 0 || estrato > 6)) ||
-          (personasHogar !== null && (Number.isNaN(personasHogar) || personasHogar < 1 || personasHogar > 20))
-        ) {
-          throw { response: { status: 400, data: {} } };
-        }
         await guardarSocioeconomico({
-          estrato,
+          estrato: economico.estrato ? Number(economico.estrato) : null,
           rango_ingresos: economico.rango_ingresos || null,
-          personas_hogar: personasHogar,
+          personas_hogar: economico.personas_hogar ? Number(economico.personas_hogar) : null,
           educacion_madre: economico.educacion_madre || null,
           educacion_padre: economico.educacion_padre || null,
           ocupacion_hogar: economico.ocupacion_hogar || null,
@@ -181,19 +215,31 @@ export default function Cuestionario() {
                 {paso === 1 && (
                   <PasoAcademico
                     valores={academico}
-                    onChange={(area, valor) => setAcademico((p) => ({ ...p, [area]: valor }))}
+                    errores={errores}
+                    onChange={(area, valor) => {
+                      setAcademico((p) => ({ ...p, [area]: valor }));
+                      setErrores((p) => ({ ...p, [area]: undefined }));
+                    }}
                   />
                 )}
                 {paso === 2 && (
                   <PasoSociodemografico
                     valores={socio}
-                    onChange={(campo, valor) => setSocio((p) => ({ ...p, [campo]: valor }))}
+                    errores={errores}
+                    onChange={(campo, valor) => {
+                      setSocio((p) => ({ ...p, [campo]: valor }));
+                      setErrores((p) => ({ ...p, [campo]: undefined }));
+                    }}
                   />
                 )}
                 {paso === 3 && (
                   <PasoSocioeconomico
                     valores={economico}
-                    onChange={(campo, valor) => setEconomico((p) => ({ ...p, [campo]: valor }))}
+                    errores={errores}
+                    onChange={(campo, valor) => {
+                      setEconomico((p) => ({ ...p, [campo]: valor }));
+                      setErrores((p) => ({ ...p, [campo]: undefined }));
+                    }}
                   />
                 )}
                 {paso === 4 && (
@@ -213,7 +259,11 @@ export default function Cuestionario() {
                   <Button
                     variant="secondary"
                     className="flex-1"
-                    onClick={() => setPaso((p) => p - 1)}
+                    onClick={() => {
+                      setErrores({});
+                      setError("");
+                      setPaso((p) => p - 1);
+                    }}
                     disabled={guardando}
                   >
                     Anterior

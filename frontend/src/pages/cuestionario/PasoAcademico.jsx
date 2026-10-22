@@ -10,7 +10,7 @@ export const AREAS_ACADEMICAS = [
 
 const NIVELES_INGLES = ["A-", "A1", "A2", "B1", "B+"];
 
-export default function PasoAcademico({ valores, onChange }) {
+export default function PasoAcademico({ valores, errores = {}, onChange }) {
   const esSimulacro = Boolean(valores.es_simulacro);
 
   return (
@@ -36,7 +36,7 @@ export default function PasoAcademico({ valores, onChange }) {
       </label>
 
       {AREAS_ACADEMICAS.map((area) => (
-        <Field key={area} label={`${area} (0-100)`} id={`nota-${area}`}>
+        <Field key={area} label={`${area} (0-100)`} id={`nota-${area}`} error={errores[area]}>
           <input
             id={`nota-${area}`}
             type="number"
@@ -45,13 +45,13 @@ export default function PasoAcademico({ valores, onChange }) {
             max={100}
             value={valores[area] ?? ""}
             onChange={(e) => onChange(area, e.target.value)}
-            className={inputClasses(false)}
+            className={inputClasses(Boolean(errores[area]))}
             placeholder="Ej. 65"
           />
         </Field>
       ))}
 
-      <Field label="Puntaje global ICFES (0-500)" id="puntaje-global">
+      <Field label="Puntaje global ICFES (0-500)" id="puntaje-global" error={errores.puntaje_global_icfes}>
         <input
           id="puntaje-global"
           type="number"
@@ -60,18 +60,18 @@ export default function PasoAcademico({ valores, onChange }) {
           max={500}
           value={valores.puntaje_global_icfes ?? ""}
           onChange={(e) => onChange("puntaje_global_icfes", e.target.value)}
-          className={inputClasses(false)}
+          className={inputClasses(Boolean(errores.puntaje_global_icfes))}
           placeholder="Ej. 310"
         />
       </Field>
 
-      <Field label="Nivel de inglés (resultado ICFES)" id="desempeno-ingles">
+      <Field label="Nivel de inglés (resultado ICFES)" id="desempeno-ingles" error={errores.desempeno_ingles}>
         <select
           id="desempeno-ingles"
           required
           value={valores.desempeno_ingles ?? ""}
           onChange={(e) => onChange("desempeno_ingles", e.target.value)}
-          className={inputClasses(false)}
+          className={inputClasses(Boolean(errores.desempeno_ingles))}
         >
           <option value="" disabled>
             Selecciona una opción

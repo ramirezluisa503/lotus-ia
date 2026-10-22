@@ -39,7 +39,7 @@ function CampoSiNo({ etiqueta, valor, onChange }) {
   );
 }
 
-export default function PasoSocioeconomico({ valores, onChange }) {
+export default function PasoSocioeconomico({ valores, errores = {}, onChange }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-navy/60">
@@ -47,7 +47,7 @@ export default function PasoSocioeconomico({ valores, onChange }) {
         situación. Puedes dejar en blanco lo que prefieras no responder.
       </p>
 
-      <Field label="Estrato (opcional)" id="estrato">
+      <Field label="Estrato (opcional)" id="estrato" error={errores.estrato}>
         <input
           id="estrato"
           type="number"
@@ -55,7 +55,7 @@ export default function PasoSocioeconomico({ valores, onChange }) {
           max={6}
           value={valores.estrato ?? ""}
           onChange={(e) => onChange("estrato", e.target.value)}
-          className={inputClasses(false)}
+          className={inputClasses(Boolean(errores.estrato))}
         />
       </Field>
 
@@ -75,7 +75,7 @@ export default function PasoSocioeconomico({ valores, onChange }) {
         </select>
       </Field>
 
-      <Field label="Personas en tu hogar (opcional)" id="personas_hogar">
+      <Field label="Personas en tu hogar (opcional)" id="personas_hogar" error={errores.personas_hogar}>
         <input
           id="personas_hogar"
           type="number"
@@ -83,7 +83,7 @@ export default function PasoSocioeconomico({ valores, onChange }) {
           max={20}
           value={valores.personas_hogar ?? ""}
           onChange={(e) => onChange("personas_hogar", e.target.value)}
-          className={inputClasses(false)}
+          className={inputClasses(Boolean(errores.personas_hogar))}
         />
       </Field>
 

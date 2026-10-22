@@ -16,10 +16,10 @@ const JORNADAS = [
   { v: "UNICA", t: "Única" },
 ];
 
-export default function PasoSociodemografico({ valores, onChange }) {
+export default function PasoSociodemografico({ valores, errores = {}, onChange }) {
   return (
     <div className="space-y-4">
-      <Field label="¿Cuántos años tienes?" id="edad">
+      <Field label="¿Cuántos años tienes?" id="edad" error={errores.edad}>
         <input
           id="edad"
           type="number"
@@ -28,7 +28,7 @@ export default function PasoSociodemografico({ valores, onChange }) {
           max={21}
           value={valores.edad ?? ""}
           onChange={(e) => onChange("edad", e.target.value)}
-          className={inputClasses(false)}
+          className={inputClasses(Boolean(errores.edad))}
           placeholder="Ej. 16"
         />
       </Field>
@@ -47,13 +47,13 @@ export default function PasoSociodemografico({ valores, onChange }) {
         </select>
       </Field>
 
-      <Field label="¿Vives en zona urbana o rural?" id="zona">
+      <Field label="¿Vives en zona urbana o rural?" id="zona" error={errores.zona}>
         <select
           id="zona"
           required
           value={valores.zona ?? ""}
           onChange={(e) => onChange("zona", e.target.value)}
-          className={inputClasses(false)}
+          className={inputClasses(Boolean(errores.zona))}
         >
           <option value="" disabled>
             Selecciona una opción
@@ -63,13 +63,13 @@ export default function PasoSociodemografico({ valores, onChange }) {
         </select>
       </Field>
 
-      <Field label="Tu institución educativa es..." id="tipo_institucion">
+      <Field label="Tu institución educativa es..." id="tipo_institucion" error={errores.tipo_institucion}>
         <select
           id="tipo_institucion"
           required
           value={valores.tipo_institucion ?? ""}
           onChange={(e) => onChange("tipo_institucion", e.target.value)}
-          className={inputClasses(false)}
+          className={inputClasses(Boolean(errores.tipo_institucion))}
         >
           <option value="" disabled>
             Selecciona una opción
@@ -79,13 +79,13 @@ export default function PasoSociodemografico({ valores, onChange }) {
         </select>
       </Field>
 
-      <Field label="Carácter de tu colegio" id="cole_caracter">
+      <Field label="Carácter de tu colegio" id="cole_caracter" error={errores.cole_caracter}>
         <select
           id="cole_caracter"
           required
           value={valores.cole_caracter ?? ""}
           onChange={(e) => onChange("cole_caracter", e.target.value)}
-          className={inputClasses(false)}
+          className={inputClasses(Boolean(errores.cole_caracter))}
         >
           <option value="" disabled>
             Selecciona una opción
@@ -98,13 +98,13 @@ export default function PasoSociodemografico({ valores, onChange }) {
         </select>
       </Field>
 
-      <Field label="Jornada de tu colegio" id="cole_jornada">
+      <Field label="Jornada de tu colegio" id="cole_jornada" error={errores.cole_jornada}>
         <select
           id="cole_jornada"
           required
           value={valores.cole_jornada ?? ""}
           onChange={(e) => onChange("cole_jornada", e.target.value)}
-          className={inputClasses(false)}
+          className={inputClasses(Boolean(errores.cole_jornada))}
         >
           <option value="" disabled>
             Selecciona una opción
