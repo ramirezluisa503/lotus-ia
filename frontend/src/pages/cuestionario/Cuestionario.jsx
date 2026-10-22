@@ -82,8 +82,15 @@ export default function Cuestionario() {
           es_simulacro: Boolean(academico.es_simulacro),
         });
       } else if (paso === 2) {
+        const edad = Number(socio.edad);
+        if (
+          Number.isNaN(edad) || edad < 13 || edad > 21 ||
+          !socio.zona || !socio.tipo_institucion || !socio.cole_caracter || !socio.cole_jornada
+        ) {
+          throw { response: { status: 400, data: {} } };
+        }
         await guardarSociodemografico({
-          edad: Number(socio.edad),
+          edad,
           genero: socio.genero || null,
           zona: socio.zona,
           tipo_institucion: socio.tipo_institucion,
@@ -91,10 +98,18 @@ export default function Cuestionario() {
           cole_jornada: socio.cole_jornada,
         });
       } else if (paso === 3) {
+        const estrato = economico.estrato ? Number(economico.estrato) : null;
+        const personasHogar = economico.personas_hogar ? Number(economico.personas_hogar) : null;
+        if (
+          (estrato !== null && (Number.isNaN(estrato) || estrato < 0 || estrato > 6)) ||
+          (personasHogar !== null && (Number.isNaN(personasHogar) || personasHogar < 1 || personasHogar > 20))
+        ) {
+          throw { response: { status: 400, data: {} } };
+        }
         await guardarSocioeconomico({
-          estrato: economico.estrato ? Number(economico.estrato) : null,
+          estrato,
           rango_ingresos: economico.rango_ingresos || null,
-          personas_hogar: economico.personas_hogar ? Number(economico.personas_hogar) : null,
+          personas_hogar: personasHogar,
           educacion_madre: economico.educacion_madre || null,
           educacion_padre: economico.educacion_padre || null,
           ocupacion_hogar: economico.ocupacion_hogar || null,
