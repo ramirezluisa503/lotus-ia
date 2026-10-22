@@ -76,6 +76,12 @@ export default function Login() {
           <Button type="submit" variant="primary" className="w-full" disabled={enviando}>
             {enviando ? "Entrando..." : "Entrar"}
           </Button>
+
+          <p className="text-center text-sm">
+            <Link to="/olvide-contrasena" className="font-medium text-teal hover:underline">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </p>
         </form>
 
         <p className="mt-6 text-center text-sm text-navy/60">

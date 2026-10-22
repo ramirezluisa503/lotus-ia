@@ -1,18 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import obtener_usuario_actual
+from app.core.email import enviar_correo_recuperacion
 from app.core.exceptions import (
     CorreoYaRegistradoError,
     CredencialesInvalidasError,
     CuentaBloqueadaError,
     EstudianteNoEncontradoError,
+    TokenRecuperacionInvalidoError,
 )
 from app.db.session import get_db
 from app.schemas.auth import (
     LoginRequest,
+    MensajeResponse,
+    OlvideContrasenaRequest,
     RegistroRequest,
     RegistroResponse,
+    RestablecerContrasenaRequest,
     TokenResponse,
     UsuarioActual,
 )
@@ -58,3 +63,30 @@ def iniciar_sesion(datos: LoginRequest, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UsuarioActual)
 def usuario_actual(usuario: UsuarioActual = Depends(obtener_usuario_actual)):
     return usuario
+
+
+@router.post("/olvide-contrasena", response_model=MensajeResponse)
+def olvide_contrasena(
+    datos: OlvideContrasenaRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    resultado = AuthService(db).solicitar_recuperacion(datos.correo)
+    if resultado is not None:
+        correo_destino, enlace = resultado
+        background_tasks.add_task(enviar_correo_recuperacion, correo_destino, enlace)
+    return MensajeResponse(
+        mensaje="Si ese correo está registrado, te enviamos un enlace para restablecer tu contraseña."
+    )
+
+
+@router.post("/restablecer-contrasena", response_model=MensajeResponse)
+def restablecer_contrasena(datos: RestablecerContrasenaRequest, db: Session = Depends(get_db)):
+    try:
+        AuthService(db).restablecer_contrasena(datos.token, datos.nueva_contrasena)
+    except TokenRecuperacionInvalidoError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El enlace de recuperación no es válido o ya expiró. Solicita uno nuevo.",
+        )
+    return MensajeResponse(mensaje="Tu contraseña se actualizó correctamente. Ya puedes iniciar sesión.")

@@ -54,3 +54,29 @@ def crear_token(usuario_id: str, rol: str) -> str:
 
 def decodificar_token(token: str) -> dict:
     return jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+
+
+# ---------- Recuperación de contraseña ----------
+# Token de un solo propósito (distinto del de sesión: no lleva "rol", así
+# que obtener_usuario_actual() lo rechaza si alguien intenta usarlo como
+# si fuera un token de inicio de sesión).
+
+TOKEN_RECUPERACION_MINUTOS = 30
+
+
+def crear_token_recuperacion(usuario_id: str) -> str:
+    ahora = datetime.now(timezone.utc)
+    payload = {
+        "sub": usuario_id,
+        "tipo": "recuperacion_contrasena",
+        "iat": ahora,
+        "exp": ahora + timedelta(minutes=TOKEN_RECUPERACION_MINUTOS),
+    }
+    return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
+
+
+def decodificar_token_recuperacion(token: str) -> str:
+    payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+    if payload.get("tipo") != "recuperacion_contrasena":
+        raise jwt.InvalidTokenError("El token no es de recuperación de contraseña")
+    return payload["sub"]

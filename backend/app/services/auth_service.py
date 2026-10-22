@@ -1,14 +1,21 @@
+import uuid
+
+import jwt
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.exceptions import (
     CorreoYaRegistradoError,
     CredencialesInvalidasError,
     CuentaBloqueadaError,
     EstudianteNoEncontradoError,
+    TokenRecuperacionInvalidoError,
 )
 from app.core.security import (
     cifrar_texto,
     crear_token,
+    crear_token_recuperacion,
+    decodificar_token_recuperacion,
     hashear_contrasena,
     verificar_contrasena,
 )
@@ -86,3 +93,30 @@ class AuthService:
 
         token = crear_token(usuario_id=str(usuario.id), rol=usuario.rol.nombre)
         return token, usuario
+
+    def solicitar_recuperacion(self, correo: str) -> tuple[str, str] | None:
+        """Devuelve (correo_destino, enlace) si existe una cuenta activa con
+        ese correo, o None si no -- quien llame no debe revelar cuál fue el
+        caso para no filtrar qué correos están registrados."""
+        usuario = self.usuarios.obtener_por_correo(correo)
+        if usuario is None or not usuario.activo:
+            return None
+
+        token = crear_token_recuperacion(str(usuario.id))
+        settings = get_settings()
+        enlace = f"{settings.frontend_url}/restablecer-contrasena?token={token}"
+        return usuario.correo, enlace
+
+    def restablecer_contrasena(self, token: str, nueva_contrasena: str) -> None:
+        try:
+            usuario_id = decodificar_token_recuperacion(token)
+        except jwt.PyJWTError:
+            raise TokenRecuperacionInvalidoError()
+
+        usuario = self.usuarios.obtener_por_id(uuid.UUID(usuario_id))
+        if usuario is None:
+            raise TokenRecuperacionInvalidoError()
+
+        usuario.contrasena_hash = hashear_contrasena(nueva_contrasena)
+        usuario.intentos_fallidos = 0
+        self.usuarios.guardar(usuario)

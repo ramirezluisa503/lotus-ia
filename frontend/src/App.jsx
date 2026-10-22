@@ -6,8 +6,10 @@ import Cuestionario from "./pages/cuestionario/Cuestionario";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Oferta from "./pages/Oferta";
+import OlvideContrasena from "./pages/OlvideContrasena";
 import Panel from "./pages/Panel";
 import Registro from "./pages/Registro";
+import RestablecerContrasena from "./pages/RestablecerContrasena";
 import Resultado from "./pages/Resultado";
 
 export default function App() {
@@ -16,6 +18,8 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
+      <Route path="/olvide-contrasena" element={<OlvideContrasena />} />
+      <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
       <Route
         path="/panel"
         element={

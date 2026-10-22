@@ -11,6 +11,13 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 60
     fernet_key: str = ""
     cors_origin: str = "http://localhost:5173"
+    frontend_url: str = "http://localhost:5173"
+
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    email_from: str = ""
 
 
 @lru_cache

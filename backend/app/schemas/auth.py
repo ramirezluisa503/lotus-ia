@@ -55,3 +55,16 @@ class UsuarioActual(BaseModel):
     id: uuid.UUID
     correo: EmailStr
     rol: str
+
+
+class OlvideContrasenaRequest(BaseModel):
+    correo: EmailStr
+
+
+class RestablecerContrasenaRequest(BaseModel):
+    token: str
+    nueva_contrasena: str = Field(min_length=8, max_length=72)
+
+
+class MensajeResponse(BaseModel):
+    mensaje: str

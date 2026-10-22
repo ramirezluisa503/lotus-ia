@@ -10,6 +10,10 @@ class CuentaBloqueadaError(Exception):
     """La cuenta superó el máximo de intentos fallidos permitidos."""
 
 
+class TokenRecuperacionInvalidoError(Exception):
+    """El token de recuperación de contraseña es inválido, ya se usó o expiró."""
+
+
 class EstudianteNoEncontradoError(Exception):
     """No existe un usuario con rol ESTUDIANTE registrado con ese correo."""
 
