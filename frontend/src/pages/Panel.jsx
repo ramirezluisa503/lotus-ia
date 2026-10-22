@@ -62,7 +62,7 @@ const PASOS_ACUDIENTE = [
   },
 ];
 
-function PanelAcudiente({ usuario, onSalir }) {
+function PanelAcudiente({ usuario }) {
   const [estado, setEstado] = useState(null);
   const [cargando, setCargando] = useState(true);
 
@@ -245,11 +245,6 @@ function PanelAcudiente({ usuario, onSalir }) {
           </span>
         </p>
 
-        <div className="mt-6 flex justify-center">
-          <Button variant="secondary" className="w-full max-w-xs" onClick={onSalir}>
-            Cerrar sesión
-          </Button>
-        </div>
       </section>
 
       <Footer />
@@ -274,7 +269,7 @@ export default function Panel() {
   }
 
   if (usuario?.rol === "ACUDIENTE") {
-    return <PanelAcudiente usuario={usuario} onSalir={manejarSalir} />;
+    return <PanelAcudiente usuario={usuario} />;
   }
 
   return (
