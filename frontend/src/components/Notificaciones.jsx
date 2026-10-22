@@ -80,7 +80,7 @@ export default function Notificaciones() {
       >
         <IconBell className="h-5 w-5" />
         {noLeidas > 0 && (
-          <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-teal px-1 text-[10px] font-semibold text-white">
+          <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-semibold text-white">
             {noLeidas > 9 ? "9+" : noLeidas}
           </span>
         )}
@@ -117,7 +117,7 @@ export default function Notificaciones() {
                   }`}
                 >
                   <div className="flex items-start gap-2">
-                    {!n.leida && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal" />}
+                    {!n.leida && <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-orange-500" />}
                     <div className={n.leida ? "" : "flex-1"}>
                       <p className={n.leida ? "" : "font-medium"}>{n.mensaje}</p>
                       <p className="mt-0.5 text-xs text-navy/40">{tiempoRelativo(n.creada_en)}</p>
