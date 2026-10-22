@@ -18,5 +18,20 @@ services:
       timeout: 5s
       retries: 10
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: lotusia_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@lotusia.com
+      PGADMIN_DEFAULT_PASSWORD: lotusia_dev
+    ports:
+      - "5050:80"
+    volumes:
+      - lotusia_pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - db
+
 volumes:
   lotusia_db_data:
+  lotusia_pgadmin_data:
