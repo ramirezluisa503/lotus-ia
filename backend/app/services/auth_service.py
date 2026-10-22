@@ -1,6 +1,5 @@
-import uuid
+from datetime import datetime, timedelta, timezone
 
-import jwt
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -12,17 +11,19 @@ from app.core.exceptions import (
     TokenRecuperacionInvalidoError,
 )
 from app.core.security import (
+    TOKEN_RECUPERACION_MINUTOS,
     cifrar_texto,
     crear_token,
-    crear_token_recuperacion,
-    decodificar_token_recuperacion,
+    generar_token_recuperacion,
     hashear_contrasena,
+    hashear_token_recuperacion,
     verificar_contrasena,
 )
 from app.models.estudiante import Estudiante
 from app.models.usuario import Usuario
 from app.repositories.estudiante_repository import EstudianteRepository
 from app.repositories.rol_repository import RolRepository
+from app.repositories.token_recuperacion_repository import TokenRecuperacionRepository
 from app.repositories.usuario_repository import UsuarioRepository
 from app.repositories.vinculo_acudiente_repository import VinculoAcudienteRepository
 from app.schemas.auth import LoginRequest, RegistroRequest
@@ -40,6 +41,7 @@ class AuthService:
         self.roles = RolRepository(db)
         self.estudiantes = EstudianteRepository(db)
         self.vinculos = VinculoAcudienteRepository(db)
+        self.tokens_recuperacion = TokenRecuperacionRepository(db)
 
     def registrar(self, datos: RegistroRequest) -> Usuario:
         if self.usuarios.obtener_por_correo(datos.correo) is not None:
@@ -113,21 +115,25 @@ class AuthService:
         if usuario is None or not usuario.activo:
             return None
 
-        token = crear_token_recuperacion(str(usuario.id))
+        token = generar_token_recuperacion()
+        expira_en = datetime.now(timezone.utc) + timedelta(minutes=TOKEN_RECUPERACION_MINUTOS)
+        self.tokens_recuperacion.crear(usuario.id, hashear_token_recuperacion(token), expira_en)
+        self.db.commit()
+
         settings = get_settings()
         enlace = f"{settings.frontend_url}/restablecer-contrasena?token={token}"
         return usuario.correo, enlace
 
     def restablecer_contrasena(self, token: str, nueva_contrasena: str) -> None:
-        try:
-            usuario_id = decodificar_token_recuperacion(token)
-        except jwt.PyJWTError:
+        registro = self.tokens_recuperacion.obtener_vigente(hashear_token_recuperacion(token))
+        if registro is None or registro.expira_en < datetime.now(timezone.utc):
             raise TokenRecuperacionInvalidoError()
 
-        usuario = self.usuarios.obtener_por_id(uuid.UUID(usuario_id))
+        usuario = self.usuarios.obtener_por_id(registro.usuario_id)
         if usuario is None:
             raise TokenRecuperacionInvalidoError()
 
+        registro.usado = True
         usuario.contrasena_hash = hashear_contrasena(nueva_contrasena)
         usuario.intentos_fallidos = 0
-        self.usuarios.guardar(usuario)
+        self.db.commit()
