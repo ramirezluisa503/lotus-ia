@@ -43,7 +43,9 @@ function TarjetaCarrera({ carrera }) {
           rel="noreferrer"
           className="mt-2 inline-block text-xs font-medium text-teal hover:underline"
         >
-          Ir al sitio de la institución →
+          {carrera.costo_semestre === null
+            ? "Consulta el costo en el sitio de la institución →"
+            : "Ir al sitio de la institución →"}
         </a>
       )}
     </div>
