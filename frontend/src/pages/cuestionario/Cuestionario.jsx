@@ -14,7 +14,7 @@ import {
   obtenerInstrumentoActivo,
 } from "../../services/cuestionarioService";
 import { generarRecomendacion } from "../../services/recomendacionService";
-import PasoAcademico, { AREAS_ACADEMICAS } from "./PasoAcademico";
+import PasoAcademico, { AREAS_ACADEMICAS, calcularPuntajeGlobalIcfes } from "./PasoAcademico";
 import PasoPsicometrico from "./PasoPsicometrico";
 import PasoSocioeconomico from "./PasoSocioeconomico";
 import PasoSociodemografico from "./PasoSociodemografico";
@@ -67,12 +67,6 @@ export default function Cuestionario() {
       if (valor === undefined || valor === "") err[area] = "Ingresa un número.";
       else if (Number.isNaN(n) || n < 0 || n > 100) err[area] = "Debe estar entre 0 y 100.";
     });
-    const puntajeGlobal = Number(academico.puntaje_global_icfes);
-    if (academico.puntaje_global_icfes === undefined || academico.puntaje_global_icfes === "") {
-      err.puntaje_global_icfes = "Ingresa un número.";
-    } else if (Number.isNaN(puntajeGlobal) || puntajeGlobal < 0 || puntajeGlobal > 500) {
-      err.puntaje_global_icfes = "Debe estar entre 0 y 500.";
-    }
     if (!academico.desempeno_ingles) err.desempeno_ingles = "Selecciona una opción.";
     return err;
   }
@@ -126,7 +120,7 @@ export default function Cuestionario() {
         }));
         await guardarAcademico({
           notas,
-          puntaje_global_icfes: Number(academico.puntaje_global_icfes),
+          puntaje_global_icfes: calcularPuntajeGlobalIcfes(academico),
           desempeno_ingles: academico.desempeno_ingles,
           es_simulacro: Boolean(academico.es_simulacro),
         });

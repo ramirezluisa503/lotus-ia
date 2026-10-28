@@ -10,8 +10,22 @@ export const AREAS_ACADEMICAS = [
 
 const NIVELES_INGLES = ["A-", "A1", "A2", "B1", "B+"];
 
+// Fórmula oficial del Puntaje Global del ICFES Saber 11 (Ministerio de
+// Educación): índice global = (3×LC + 3×MAT + 3×SC + 3×CN + 1×Inglés) / 13,
+// puntaje global = índice global × 5, redondeado al entero más cercano.
+export function calcularPuntajeGlobalIcfes(valores) {
+  const nota = (area) => Number(valores[area]);
+  const notas = AREAS_ACADEMICAS.map(nota);
+  if (notas.some((n) => Number.isNaN(n))) return null;
+
+  const [lc, mat, soc, cn, ing] = notas;
+  const indiceGlobal = (3 * lc + 3 * mat + 3 * soc + 3 * cn + 1 * ing) / 13;
+  return Math.round(indiceGlobal * 5);
+}
+
 export default function PasoAcademico({ valores, errores = {}, onChange }) {
   const esSimulacro = Boolean(valores.es_simulacro);
+  const puntajeGlobal = calcularPuntajeGlobalIcfes(valores);
 
   return (
     <div className="space-y-4">
@@ -51,18 +65,17 @@ export default function PasoAcademico({ valores, errores = {}, onChange }) {
         </Field>
       ))}
 
-      <Field label="Puntaje global ICFES (0-500)" id="puntaje-global" error={errores.puntaje_global_icfes}>
-        <input
+      <Field label="Puntaje global ICFES (0-500)" id="puntaje-global">
+        <div
           id="puntaje-global"
-          type="number"
-          required
-          min={0}
-          max={500}
-          value={valores.puntaje_global_icfes ?? ""}
-          onChange={(e) => onChange("puntaje_global_icfes", e.target.value)}
-          className={inputClasses(Boolean(errores.puntaje_global_icfes))}
-          placeholder="Ej. 310"
-        />
+          className="w-full rounded-lg border border-navy/10 bg-ice/60 px-3.5 py-2.5 text-sm font-medium text-navy"
+        >
+          {puntajeGlobal ?? "—"}
+        </div>
+        <p className="mt-1.5 text-xs text-navy/50">
+          Se calcula automáticamente con la fórmula oficial del ICFES a
+          partir de las 5 materias de arriba.
+        </p>
       </Field>
 
       <Field label="Nivel de inglés (resultado ICFES)" id="desempeno-ingles" error={errores.desempeno_ingles}>
