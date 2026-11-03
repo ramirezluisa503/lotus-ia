@@ -306,6 +306,12 @@ export default function Panel() {
           </dl>
 
           {usuario?.rol === "ESTUDIANTE" && (
+            <Button as={Link} to="/perfil" variant="secondary" className="mt-4 w-full">
+              Ver mi perfil
+            </Button>
+          )}
+
+          {usuario?.rol === "ESTUDIANTE" && (
             <div className="mt-4 rounded-xl border border-navy/10 p-4">
               <p className="text-sm font-medium text-navy">
                 {estado?.puede_continuar
