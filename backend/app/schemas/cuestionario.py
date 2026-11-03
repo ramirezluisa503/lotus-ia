@@ -43,7 +43,7 @@ class ExtraccionIcfesResponse(BaseModel):
 
 
 class DatosSociodemograficosRequest(BaseModel):
-    edad: int = Field(ge=13, le=21)
+    edad: int = Field(gt=10)
     genero: Genero | None = None
     zona: Zona
     tipo_institucion: TipoInstitucion

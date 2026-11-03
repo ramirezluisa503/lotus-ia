@@ -75,7 +75,7 @@ export default function Cuestionario() {
     const err = {};
     const edad = Number(socio.edad);
     if (socio.edad === undefined || socio.edad === "") err.edad = "Ingresa tu edad.";
-    else if (Number.isNaN(edad) || edad < 13 || edad > 21) err.edad = "Debe estar entre 13 y 21 años.";
+    else if (Number.isNaN(edad) || edad <= 10) err.edad = "Debes tener más de 10 años.";
     if (!socio.zona) err.zona = "Selecciona una opción.";
     if (!socio.tipo_institucion) err.tipo_institucion = "Selecciona una opción.";
     if (!socio.cole_caracter) err.cole_caracter = "Selecciona una opción.";

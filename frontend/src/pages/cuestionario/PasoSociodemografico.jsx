@@ -24,8 +24,7 @@ export default function PasoSociodemografico({ valores, errores = {}, onChange }
           id="edad"
           type="number"
           required
-          min={13}
-          max={21}
+          min={11}
           value={valores.edad ?? ""}
           onChange={(e) => onChange("edad", e.target.value)}
           className={inputClasses(Boolean(errores.edad))}

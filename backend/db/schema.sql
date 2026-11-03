@@ -87,7 +87,7 @@ CREATE INDEX idx_notificaciones_usuario ON auth.notificaciones(usuario_id, cread
 CREATE TABLE app.estudiantes (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- seudónimo
   grado             SMALLINT NOT NULL CHECK (grado IN (10, 11)),
-  edad              SMALLINT CHECK (edad BETWEEN 13 AND 21),
+  edad              SMALLINT CHECK (edad > 10),
   genero            VARCHAR(17)
                      CHECK (genero IN ('FEMENINO','MASCULINO','OTRO','PREFIERE_NO_DECIR')),
   zona              VARCHAR(6) CHECK (zona IN ('URBANA','RURAL')),
