@@ -1,0 +1,15 @@
+{$DOMINIO} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+
+	# React Router maneja las rutas en el navegador: cualquier ruta que no sea
+	# un archivo real (/panel, /resultado, ...) devuelve index.html.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

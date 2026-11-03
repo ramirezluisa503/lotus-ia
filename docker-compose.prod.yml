@@ -1,0 +1,56 @@
+# Despliegue en un servidor (AWS EC2). Ver docs/despliegue-aws.md.
+# Uso: docker compose -f docker-compose.prod.yml up -d --build
+# Lee las variables del archivo .env de esta carpeta (copia de .env.produccion.example).
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lotusia
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: lotusia
+    volumes:
+      - lotusia_db_data:/var/lib/postgresql/data
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./backend/db/seed_modelo_placeholder.sql:/docker-entrypoint-initdb.d/02-seed_modelo.sql:ro
+      - ./backend/db/seed_instrumento_demo.sql:/docker-entrypoint-initdb.d/03-seed_instrumento.sql:ro
+      - ./backend/db/seed_oferta_demo.sql:/docker-entrypoint-initdb.d/04-seed_oferta.sql:ro
+      - ./backend/db/seed_oferta_virtual.sql:/docker-entrypoint-initdb.d/05-seed_oferta_virtual.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lotusia -d lotusia"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://lotusia:${POSTGRES_PASSWORD}@db:5432/lotusia
+      CORS_ORIGIN: https://${DOMINIO:?Falta DOMINIO en .env}
+      FRONTEND_URL: https://${DOMINIO}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      DOMINIO: ${DOMINIO}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+
+volumes:
+  lotusia_db_data:
+  caddy_data:
+  caddy_config:

@@ -8,6 +8,7 @@ __pycache__/
 .env
 .env.*
 !.env.example
+!.env.produccion.example
 
 # Artefactos de build
 frontend/dist/
