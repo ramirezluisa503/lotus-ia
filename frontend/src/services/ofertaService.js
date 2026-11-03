@@ -4,10 +4,10 @@ export function listarAreas() {
   return api.get("/oferta/areas").then((res) => res.data);
 }
 
-export function listarCarreras({ area, nivel, costoMax } = {}) {
+export function listarCarreras({ costoMax } = {}) {
   return api
     .get("/oferta/carreras", {
-      params: { area, nivel, costo_max: costoMax },
+      params: { costo_max: costoMax },
     })
     .then((res) => res.data);
 }

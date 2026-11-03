@@ -202,7 +202,7 @@ export default function Resultado() {
                 {recomendacion.aviso}
               </p>
 
-              <Link to={`/oferta?area=${encodeURIComponent(recomendacion.area)}`}>
+              <Link to="/oferta">
                 <Button variant="primary" className="mt-6 w-full">
                   <IconHeart className="h-4 w-4" />
                   Ver dónde estudiar y becas

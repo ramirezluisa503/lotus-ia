@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Alert from "../components/Alert";
 import Navbar from "../components/Navbar";
-import { inputClasses } from "../components/Field";
-import { IconHeart, IconHome } from "../components/icons";
+import { IconHeart, IconHome, IconShield } from "../components/icons";
 import { mensajeDeError } from "../services/api";
-import { listarAreas, listarBecas, listarCarreras } from "../services/ofertaService";
+import { listarBecas, listarCarreras } from "../services/ofertaService";
+import { obtenerHistorialRecomendaciones } from "../services/recomendacionService";
 
 const NIVEL_ETIQUETA = {
   TECNICO_PROFESIONAL: "Técnico profesional",
@@ -77,36 +77,41 @@ function TarjetaBeca({ beca }) {
   );
 }
 
+function etiquetaRecomendacion(r) {
+  return `${r.area} (${NIVEL_ETIQUETA[r.nivel_formacion] ?? r.nivel_formacion})`;
+}
+
 export default function Oferta() {
-  const [searchParams] = useSearchParams();
-  const [areas, setAreas] = useState([]);
-  const [area, setArea] = useState(searchParams.get("area") ?? "");
-  const [nivel, setNivel] = useState("");
+  const [recomendaciones, setRecomendaciones] = useState(null);
   const [carreras, setCarreras] = useState([]);
   const [becas, setBecas] = useState([]);
   const [error, setError] = useState("");
-  const [cargando, setCargando] = useState(false);
+  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    listarAreas()
-      .then(setAreas)
-      .catch((err) => setError(mensajeDeError(err)));
-  }, []);
-
-  useEffect(() => {
-    setCargando(true);
-    setError("");
-    Promise.all([
-      listarCarreras({ area: area || undefined, nivel: nivel || undefined }),
-      listarBecas({ area: area || undefined }),
-    ])
-      .then(([c, b]) => {
-        setCarreras(c);
-        setBecas(b);
+    obtenerHistorialRecomendaciones()
+      .then((historial) => {
+        setRecomendaciones(historial);
+        if (historial.length === 0) {
+          setCargando(false);
+          return Promise.resolve();
+        }
+        return Promise.all([listarCarreras(), listarBecas()]).then(([c, b]) => {
+          setCarreras(c);
+          setBecas(b);
+        });
       })
       .catch((err) => setError(mensajeDeError(err)))
       .finally(() => setCargando(false));
-  }, [area, nivel]);
+  }, []);
+
+  const sinRecomendacionTodavia = !cargando && recomendaciones?.length === 0;
+
+  // Áreas y niveles distintos entre todas las recomendaciones, para
+  // mostrarle al estudiante en qué se basa lo que está viendo.
+  const areasRecomendadas = recomendaciones
+    ? [...new Map(recomendaciones.map((r) => [etiquetaRecomendacion(r), r])).values()]
+    : [];
 
   return (
     <div className="min-h-screen bg-ice">
@@ -114,77 +119,77 @@ export default function Oferta() {
       <main className="mx-auto max-w-3xl px-6 py-12">
         <h1 className="text-xl font-semibold text-navy">Oferta académica y becas</h1>
         <p className="mt-1 text-sm text-navy/60">
-          Explora instituciones de Pereira y apoyos económicos disponibles.
-          Esta información es orientativa y puede cambiar.
+          Instituciones de Pereira y apoyos económicos disponibles. Esta
+          información es orientativa y puede cambiar.
         </p>
-
-        <div className="mt-6 flex flex-wrap gap-3">
-          <select
-            value={area}
-            onChange={(e) => setArea(e.target.value)}
-            className={`${inputClasses(false)} w-auto`}
-          >
-            <option value="">Todas las áreas</option>
-            {areas.map((a) => (
-              <option key={a.id} value={a.nombre}>
-                {a.nombre}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={nivel}
-            onChange={(e) => setNivel(e.target.value)}
-            className={`${inputClasses(false)} w-auto`}
-          >
-            <option value="">Todos los niveles</option>
-            {Object.entries(NIVEL_ETIQUETA).map(([valor, etiqueta]) => (
-              <option key={valor} value={valor}>
-                {etiqueta}
-              </option>
-            ))}
-          </select>
-        </div>
 
         <div className="mt-4">
           <Alert tipo="error">{error}</Alert>
         </div>
 
-        <section className="mt-8">
-          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-navy/60">
-            <IconHome className="h-4 w-4" />
-            Carreras ({carreras.length})
-          </h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {!cargando && carreras.length === 0 && (
-              <p className="text-sm text-navy/50">No encontramos carreras con esos filtros.</p>
-            )}
-            {carreras.map((c) => (
-              <TarjetaCarrera key={c.id} carrera={c} />
-            ))}
+        {cargando ? (
+          <p className="mt-8 text-sm text-navy/60">Cargando...</p>
+        ) : sinRecomendacionTodavia ? (
+          <div className="mt-8 rounded-xl border border-navy/10 bg-white p-6 text-center">
+            <IconShield className="mx-auto h-6 w-6 text-navy/40" />
+            <p className="mt-3 text-sm font-medium text-navy">
+              Todavía no tienes una recomendación vocacional
+            </p>
+            <p className="mt-1 text-sm text-navy/60">
+              Las carreras que te mostramos aquí dependen de tu recomendación.
+              Completa tu cuestionario para verlas.
+            </p>
+            <Link to="/cuestionario" className="mt-3 inline-block text-sm font-medium text-teal hover:underline">
+              Continuar mi cuestionario →
+            </Link>
           </div>
-        </section>
-
-        <section className="mt-8">
-          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-navy/60">
-            <IconHeart className="h-4 w-4" />
-            Becas y apoyos ({becas.length})
-          </h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {!cargando && becas.length === 0 && (
-              <p className="text-sm text-navy/50">No encontramos becas con esos filtros.</p>
+        ) : (
+          <>
+            {areasRecomendadas.length > 0 && (
+              <p className="mt-4 text-xs text-navy/50">
+                Carreras según tu recomendación en: {areasRecomendadas.map((r) => etiquetaRecomendacion(r)).join(", ")}.
+              </p>
             )}
-            {becas.map((b) => (
-              <TarjetaBeca key={b.id} beca={b} />
-            ))}
-          </div>
-        </section>
 
-        <p className="mt-8 rounded-xl border border-cyan-light bg-white px-4 py-3 text-xs text-navy/60">
-          No garantizamos la disponibilidad de cupos ni el otorgamiento de las
-          becas listadas. Confirma siempre con la institución o entidad
-          correspondiente.
-        </p>
+            <section className="mt-8">
+              <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-navy/60">
+                <IconHome className="h-4 w-4" />
+                Carreras ({carreras.length})
+              </h2>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {!cargando && carreras.length === 0 && (
+                  <p className="text-sm text-navy/50">
+                    Todavía no tenemos carreras registradas para tu recomendación.
+                  </p>
+                )}
+                {carreras.map((c) => (
+                  <TarjetaCarrera key={c.id} carrera={c} />
+                ))}
+              </div>
+            </section>
+
+            <section className="mt-8">
+              <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-navy/60">
+                <IconHeart className="h-4 w-4" />
+                Becas y apoyos ({becas.length})
+              </h2>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {!cargando && becas.length === 0 && (
+                  <p className="text-sm text-navy/50">No encontramos becas disponibles.</p>
+                )}
+                {becas.map((b) => (
+                  <TarjetaBeca key={b.id} beca={b} />
+                ))}
+              </div>
+            </section>
+
+            <p className="mt-8 rounded-xl border border-cyan-light bg-white px-4 py-3 text-xs text-navy/60">
+              No garantizamos la disponibilidad de cupos ni el otorgamiento de
+              las becas listadas. Confirma siempre con la institución o
+              entidad correspondiente.
+            </p>
+          </>
+        )}
       </main>
     </div>
   );

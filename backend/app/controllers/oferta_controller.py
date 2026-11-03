@@ -1,7 +1,9 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import requerir_rol
+from app.core.deps import requerir_estudiante_autorizado, requerir_rol
 from app.core.exceptions import AreaAcademicaInvalidaError
 from app.db.session import get_db
 from app.schemas.oferta import AreaConocimientoResponse, BecaResponse, CarreraResponse
@@ -20,19 +22,13 @@ def listar_areas(
 
 @router.get("/carreras", response_model=list[CarreraResponse])
 def listar_carreras(
-    area: str | None = None,
-    nivel: str | None = None,
     costo_max: float | None = None,
-    _usuario=Depends(requerir_rol("ESTUDIANTE")),
+    estudiante_id: uuid.UUID = Depends(requerir_estudiante_autorizado),
     db: Session = Depends(get_db),
 ):
-    try:
-        return OfertaAcademicaService(db).listar_carreras(area, nivel, costo_max)
-    except AreaAcademicaInvalidaError as err:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"El área de conocimiento '{err}' no existe.",
-        )
+    """Solo devuelve carreras del área y nivel de formación que la IA le ha
+    recomendado a este estudiante -- no el catálogo completo."""
+    return OfertaAcademicaService(db).listar_carreras_recomendadas(estudiante_id, costo_max)
 
 
 @router.get("/becas", response_model=list[BecaResponse])

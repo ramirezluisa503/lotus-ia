@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AreaAcademicaInvalidaError
@@ -22,11 +24,11 @@ class OfertaAcademicaService:
             AreaConocimientoResponse(id=a.id, nombre=a.nombre) for a in self.repo.listar_areas()
         ]
 
-    def listar_carreras(
-        self, area: str | None, nivel: str | None, costo_max: float | None
+    def listar_carreras_recomendadas(
+        self, estudiante_id: uuid.UUID, costo_max: float | None
     ) -> list[CarreraResponse]:
-        area_id = self._resolver_area_id(area)
-        carreras = self.repo.listar_carreras(area_id, nivel, costo_max)
+        pares = self.repo.pares_area_nivel_recomendados(estudiante_id)
+        carreras = self.repo.listar_carreras_por_pares(pares, costo_max)
         return [
             CarreraResponse(
                 id=c.id,
