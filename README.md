@@ -6,6 +6,22 @@ elección de carreras universitarias de estudiantes de grado 10° y 11° en Pere
 Proyecto de grado — Tecnología en Desarrollo de Software, Universidad Católica de Pereira.
 Autoras: Luisa Fernanda Ramírez Osorio, Mariana Rosero Medina.
 
+## Despliegue
+
+La plataforma está publicada en **https://16-59-117-22.sslip.io**
+
+- Servidor: AWS EC2 (capa gratuita), región Ohio (`us-east-2`), una sola instancia
+  `t3.micro` con IP elástica `16.59.117.22`. No hay dominio propio: `sslip.io`
+  convierte la IP en una dirección con HTTPS.
+- Corre con `docker-compose.prod.yml`: base de datos (PostgreSQL), backend (FastAPI +
+  modelo de IA) y Caddy, que sirve el frontend y saca el certificado HTTPS.
+- Publicar cambios nuevos de `main`: entrar al servidor y correr
+  `cd lotus-ia && git pull && docker compose -f docker-compose.prod.yml up -d --build`.
+
+Paso a paso completo (crear el servidor, configurarlo y actualizarlo) en
+[docs/despliegue-aws.md](docs/despliegue-aws.md). Las claves del servidor y del
+administrador no se guardan en el repositorio.
+
 ## Estructura del repositorio
 
 ```
@@ -30,6 +46,7 @@ Etapa de Análisis y la Etapa de Diseño.
 - [x] Capa de IA y módulo de recomendación (Árbol de Decisión entrenado con ICFES Saber 11 — ver `backend/ml/README.md`)
 - [x] Oferta académica, becas y encuesta de satisfacción
 - [x] Panel de administración
+- [x] Despliegue en AWS EC2
 
 ## Cómo correr el proyecto localmente
 

@@ -34,7 +34,7 @@ Trabaja siempre en la misma región (arriba a la derecha). Esta guía usa **EE. 
 | Campo | Valor |
 |---|---|
 | Nombre | `lotusia` |
-| Imagen (AMI) | **Ubuntu Server 24.04 LTS** (la que dice "Apta para la capa gratuita") |
+| Imagen (AMI) | **Ubuntu Server** LTS (la que dice "Apta para la capa gratuita"; se usó la 26.04) |
 | Tipo de instancia | **t3.micro** (o la micro que diga "Apta para la capa gratuita") |
 | Par de claves | **Crear un nuevo par de claves** → nombre `lotusia-clave`, RSA, `.pem`. Guarda el archivo, no se puede volver a descargar |
 | Configuración de red → Firewall | **Crear grupo de seguridad** y marca las 3 casillas: SSH desde **Cualquier lugar**, **HTTPS** y **HTTP** desde internet |
@@ -63,6 +63,13 @@ Sin esto la IP cambia cada vez que se apaga la máquina y el certificado HTTPS d
 Se abre una terminal en el navegador. Todos los comandos que siguen se pegan ahí
 (clic derecho → pegar, o Ctrl+Shift+V).
 
+Si sale "No se pudo conectar a la instancia", entra desde tu computador con la
+llave que descargaste en el paso 1 (PowerShell o Git Bash):
+
+```bash
+ssh -i "ruta/a/lotusia-clave.pem" ubuntu@<IP elástica>
+```
+
 ## 4. Preparar el servidor (una sola vez)
 
 Memoria extra (swap) para que compilar no se quede sin RAM:
@@ -78,7 +85,7 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 Instalar Docker:
 
 ```bash
-curl -fsSL https://get.docker.com | sudo sh
+sudo apt-get update && sudo apt-get install -y docker.io docker-compose-v2 docker-buildx git
 sudo usermod -aG docker ubuntu
 exit
 ```
