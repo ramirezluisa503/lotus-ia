@@ -10,7 +10,11 @@ from app.repositories.consentimiento_repository import ConsentimientoRepository
 from app.repositories.estudiante_repository import EstudianteRepository
 from app.repositories.usuario_repository import UsuarioRepository
 from app.repositories.vinculo_acudiente_repository import VinculoAcudienteRepository
-from app.schemas.consentimiento import EstadoConsentimientoResponse, EstudianteVinculadoResponse
+from app.schemas.consentimiento import (
+    AcudienteVinculadoResponse,
+    EstadoConsentimientoResponse,
+    EstudianteVinculadoResponse,
+)
 from app.services.notificacion_service import crear_notificacion
 
 VERSION_TEXTO_VIGENTE = "1.0"
@@ -112,6 +116,23 @@ class ConsentimientoService:
                     consentimiento_otorgado=estado.consentimiento_otorgado,
                     asentimiento_otorgado=estado.asentimiento_otorgado,
                     puede_continuar=estado.puede_continuar,
+                )
+            )
+        return resultado
+
+    def listar_acudientes_para_estudiante(
+        self, estudiante_usuario_id: uuid.UUID
+    ) -> list[AcudienteVinculadoResponse]:
+        resultado = []
+        for vinculo in self.vinculos.listar_acudientes_de_estudiante(estudiante_usuario_id):
+            usuario_acudiente = self.usuarios.obtener_por_id(vinculo.acudiente_id)
+            if usuario_acudiente is None:
+                continue
+            resultado.append(
+                AcudienteVinculadoResponse(
+                    nombre=descifrar_texto(usuario_acudiente.nombre_cifrado),
+                    correo=usuario_acudiente.correo,
+                    parentesco=vinculo.parentesco,
                 )
             )
         return resultado

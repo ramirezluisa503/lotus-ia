@@ -14,6 +14,8 @@ from app.core.exceptions import (
 )
 from app.db.session import get_db
 from app.schemas.auth import (
+    ActualizarPerfilRequest,
+    CambiarContrasenaRequest,
     LoginRequest,
     MensajeResponse,
     OlvideContrasenaRequest,
@@ -79,6 +81,38 @@ def iniciar_sesion(datos: LoginRequest, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UsuarioActual)
 def usuario_actual(usuario: UsuarioActual = Depends(obtener_usuario_actual)):
     return usuario
+
+
+@router.put("/perfil", response_model=UsuarioActual)
+def actualizar_perfil(
+    datos: ActualizarPerfilRequest,
+    usuario: UsuarioActual = Depends(obtener_usuario_actual),
+    db: Session = Depends(get_db),
+):
+    try:
+        actualizado = AuthService(db).actualizar_perfil(usuario.id, datos.nombre, datos.correo)
+    except CorreoYaRegistradoError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ya existe otra cuenta registrada con ese correo.",
+        )
+    return UsuarioActual(id=actualizado.id, correo=actualizado.correo, nombre=datos.nombre, rol=usuario.rol)
+
+
+@router.put("/cambiar-contrasena", response_model=MensajeResponse)
+def cambiar_contrasena(
+    datos: CambiarContrasenaRequest,
+    usuario: UsuarioActual = Depends(obtener_usuario_actual),
+    db: Session = Depends(get_db),
+):
+    try:
+        AuthService(db).cambiar_contrasena(usuario.id, datos.contrasena_actual, datos.nueva_contrasena)
+    except CredencialesInvalidasError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tu contraseña actual no es correcta.",
+        )
+    return MensajeResponse(mensaje="Tu contraseña se actualizó correctamente.")
 
 
 @router.post("/vincular-estudiante", response_model=MensajeResponse)

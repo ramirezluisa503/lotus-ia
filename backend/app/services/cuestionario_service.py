@@ -10,7 +10,10 @@ from app.schemas.cuestionario import (
     DatosSociodemograficosRequest,
     DatosSocioeconomicosRequest,
     DimensionPuntaje,
+    EstadoProcesoResponse,
     InstrumentoActivoResponse,
+    MisRespuestasResponse,
+    NotaArea,
     PerfilPsicometricoResponse,
     PreguntaResponse,
     RespuestasPsicometricoRequest,
@@ -35,6 +38,40 @@ class CuestionarioService:
         estudiante.es_puntaje_simulacro = datos.es_simulacro
         self.db.commit()
         return estudiante.estado_proceso
+
+    def obtener_mi_estado(self, estudiante_id: uuid.UUID) -> EstadoProcesoResponse:
+        estudiante = self.repo.obtener_estudiante(estudiante_id)
+        return EstadoProcesoResponse(estado_proceso=estudiante.estado_proceso, grado=estudiante.grado)
+
+    def obtener_mis_respuestas(self, estudiante_id: uuid.UUID) -> MisRespuestasResponse:
+        estudiante = self.repo.obtener_estudiante(estudiante_id)
+        notas = self.repo.notas_por_area(estudiante_id)
+        socio = self.repo.obtener_datos_socioeconomicos(estudiante_id)
+
+        return MisRespuestasResponse(
+            notas=[NotaArea(area=area, nota=nota) for area, nota in notas.items()],
+            puntaje_global_icfes=estudiante.puntaje_global_icfes,
+            desempeno_ingles=estudiante.desempeno_ingles,
+            es_simulacro=estudiante.es_puntaje_simulacro,
+            edad=estudiante.edad,
+            genero=estudiante.genero,
+            zona=estudiante.zona,
+            tipo_institucion=estudiante.tipo_institucion,
+            cole_caracter=estudiante.cole_caracter,
+            cole_jornada=estudiante.cole_jornada,
+            estrato=socio.estrato if socio else None,
+            rango_ingresos=socio.rango_ingresos if socio else None,
+            personas_hogar=socio.personas_hogar if socio else None,
+            educacion_madre=socio.educacion_madre if socio else None,
+            educacion_padre=socio.educacion_padre if socio else None,
+            ocupacion_hogar=socio.ocupacion_hogar if socio else None,
+            tiene_internet=socio.tiene_internet if socio else None,
+            tiene_computador=socio.tiene_computador if socio else None,
+            tiene_lavadora=socio.tiene_lavadora if socio else None,
+            tiene_automovil=socio.tiene_automovil if socio else None,
+            recibe_apoyo_estatal=socio.recibe_apoyo_estatal if socio else None,
+            trabaja=socio.trabaja if socio else None,
+        )
 
     def obtener_perfil_psicometrico(self, estudiante_id: uuid.UUID) -> PerfilPsicometricoResponse:
         promedios = self.repo.promedio_por_dimension(estudiante_id)

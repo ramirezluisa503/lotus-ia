@@ -34,3 +34,9 @@ class EstudianteVinculadoResponse(BaseModel):
     consentimiento_otorgado: bool
     asentimiento_otorgado: bool
     puede_continuar: bool
+
+
+class AcudienteVinculadoResponse(BaseModel):
+    nombre: str
+    correo: EmailStr
+    parentesco: str

@@ -77,7 +77,18 @@ class TokenResponse(BaseModel):
 class UsuarioActual(BaseModel):
     id: uuid.UUID
     correo: EmailStr
+    nombre: str
     rol: str
+
+
+class ActualizarPerfilRequest(BaseModel):
+    nombre: str = Field(min_length=2, max_length=150)
+    correo: EmailStr
+
+
+class CambiarContrasenaRequest(BaseModel):
+    contrasena_actual: str
+    nueva_contrasena: str = Field(min_length=8, max_length=72)
 
 
 class VincularEstudianteRequest(BaseModel):

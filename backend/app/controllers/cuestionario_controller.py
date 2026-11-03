@@ -3,14 +3,16 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import requerir_estudiante_autorizado
+from app.core.deps import obtener_estudiante_id_actual, requerir_estudiante_autorizado
 from app.core.exceptions import AreaAcademicaInvalidaError, InstrumentoNoDisponibleError
 from app.db.session import get_db
 from app.schemas.cuestionario import (
     DatosAcademicosRequest,
     DatosSociodemograficosRequest,
     DatosSocioeconomicosRequest,
+    EstadoProcesoResponse,
     InstrumentoActivoResponse,
+    MisRespuestasResponse,
     PasoGuardadoResponse,
     PerfilPsicometricoResponse,
     RespuestasPsicometricoRequest,
@@ -57,9 +59,25 @@ def guardar_socioeconomico(
     return PasoGuardadoResponse(estado_proceso=estado)
 
 
+@cuestionario_router.get("/mi-estado", response_model=EstadoProcesoResponse)
+def mi_estado(
+    estudiante_id: uuid.UUID = Depends(obtener_estudiante_id_actual),
+    db: Session = Depends(get_db),
+):
+    return CuestionarioService(db).obtener_mi_estado(estudiante_id)
+
+
+@cuestionario_router.get("/mis-respuestas", response_model=MisRespuestasResponse)
+def mis_respuestas(
+    estudiante_id: uuid.UUID = Depends(obtener_estudiante_id_actual),
+    db: Session = Depends(get_db),
+):
+    return CuestionarioService(db).obtener_mis_respuestas(estudiante_id)
+
+
 @cuestionario_router.get("/psicometrico/perfil", response_model=PerfilPsicometricoResponse)
 def perfil_psicometrico(
-    estudiante_id: uuid.UUID = Depends(requerir_estudiante_autorizado),
+    estudiante_id: uuid.UUID = Depends(obtener_estudiante_id_actual),
     db: Session = Depends(get_db),
 ):
     return CuestionarioService(db).obtener_perfil_psicometrico(estudiante_id)

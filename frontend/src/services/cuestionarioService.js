@@ -23,3 +23,11 @@ export function guardarPsicometrico(respuestas) {
 export function obtenerPerfilPsicometrico() {
   return api.get("/cuestionario/psicometrico/perfil").then((res) => res.data);
 }
+
+export function obtenerMiEstado() {
+  return api.get("/cuestionario/mi-estado").then((res) => res.data);
+}
+
+export function obtenerMisRespuestas() {
+  return api.get("/cuestionario/mis-respuestas").then((res) => res.data);
+}

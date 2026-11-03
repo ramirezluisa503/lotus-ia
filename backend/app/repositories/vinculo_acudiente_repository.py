@@ -25,6 +25,13 @@ class VinculoAcudienteRepository:
             .all()
         )
 
+    def listar_acudientes_de_estudiante(self, estudiante_usuario_id: uuid.UUID) -> list[VinculoAcudiente]:
+        return (
+            self.db.query(VinculoAcudiente)
+            .filter(VinculoAcudiente.estudiante_usuario_id == estudiante_usuario_id)
+            .all()
+        )
+
     def existe_vinculo(self, acudiente_id: uuid.UUID, estudiante_usuario_id: uuid.UUID) -> bool:
         return (
             self.db.query(VinculoAcudiente)

@@ -97,3 +97,38 @@ class DimensionPuntaje(BaseModel):
 
 class PerfilPsicometricoResponse(BaseModel):
     dimensiones: list[DimensionPuntaje]
+
+
+class EstadoProcesoResponse(BaseModel):
+    estado_proceso: str
+    grado: int
+
+
+class MisRespuestasResponse(BaseModel):
+    # Paso 1: académico
+    notas: list[NotaArea]
+    puntaje_global_icfes: int | None
+    desempeno_ingles: str | None
+    es_simulacro: bool
+
+    # Paso 2: sociodemográfico
+    edad: int | None
+    genero: str | None
+    zona: str | None
+    tipo_institucion: str | None
+    cole_caracter: str | None
+    cole_jornada: str | None
+
+    # Paso 3: socioeconómico
+    estrato: int | None
+    rango_ingresos: str | None
+    personas_hogar: int | None
+    educacion_madre: str | None
+    educacion_padre: str | None
+    ocupacion_hogar: str | None
+    tiene_internet: bool | None
+    tiene_computador: bool | None
+    tiene_lavadora: bool | None
+    tiene_automovil: bool | None
+    recibe_apoyo_estatal: bool | None
+    trabaja: bool | None

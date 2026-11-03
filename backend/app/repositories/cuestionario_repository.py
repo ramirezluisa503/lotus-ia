@@ -37,6 +37,15 @@ class CuestionarioRepository:
     def obtener_datos_socioeconomicos(self, estudiante_id: uuid.UUID) -> DatosSocioeconomicos | None:
         return self.db.get(DatosSocioeconomicos, estudiante_id)
 
+    def notas_por_area(self, estudiante_id: uuid.UUID) -> dict[str, float]:
+        filas = (
+            self.db.query(AreaAcademica.nombre, RendimientoAcademico.nota)
+            .join(AreaAcademica, AreaAcademica.id == RendimientoAcademico.area_id)
+            .filter(RendimientoAcademico.estudiante_id == estudiante_id)
+            .all()
+        )
+        return {nombre: float(nota) for nombre, nota in filas}
+
     def guardar_datos_socioeconomicos(self, datos: DatosSocioeconomicos) -> DatosSocioeconomicos:
         existente = self.db.get(DatosSocioeconomicos, datos.estudiante_id)
         if existente:

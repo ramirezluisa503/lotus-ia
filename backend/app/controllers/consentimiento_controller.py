@@ -6,6 +6,7 @@ from app.core.exceptions import EstudianteNoVinculadoError
 from app.db.session import get_db
 from app.schemas.auth import UsuarioActual
 from app.schemas.consentimiento import (
+    AcudienteVinculadoResponse,
     ConsentimientoAcudienteRequest,
     ConsentimientoRequest,
     ConsentimientoResponse,
@@ -61,3 +62,11 @@ def estudiantes_a_cargo(
     db: Session = Depends(get_db),
 ):
     return ConsentimientoService(db).listar_estudiantes_para_acudiente(usuario.id)
+
+
+@router.get("/mi-acudiente", response_model=list[AcudienteVinculadoResponse])
+def mi_acudiente(
+    usuario: UsuarioActual = Depends(requerir_rol("ESTUDIANTE")),
+    db: Session = Depends(get_db),
+):
+    return ConsentimientoService(db).listar_acudientes_para_estudiante(usuario.id)

@@ -36,6 +36,16 @@ export function obtenerUsuarioActual() {
   return api.get("/auth/me").then((res) => res.data);
 }
 
+export function actualizarPerfil({ nombre, correo }) {
+  return api.put("/auth/perfil", { nombre, correo }).then((res) => res.data);
+}
+
+export function cambiarContrasena({ contrasena_actual, nueva_contrasena }) {
+  return api
+    .put("/auth/cambiar-contrasena", { contrasena_actual, nueva_contrasena })
+    .then((res) => res.data);
+}
+
 export function vincularEstudiante({ correo_estudiante, parentesco }) {
   return api
     .post("/auth/vincular-estudiante", { correo_estudiante, parentesco })

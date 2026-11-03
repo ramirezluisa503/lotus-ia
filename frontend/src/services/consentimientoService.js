@@ -17,3 +17,7 @@ export function obtenerEstadoAutorizacion() {
 export function obtenerEstudiantesACargo() {
   return api.get("/consentimientos/estudiantes").then((res) => res.data);
 }
+
+export function obtenerMiAcudiente() {
+  return api.get("/consentimientos/mi-acudiente").then((res) => res.data);
+}

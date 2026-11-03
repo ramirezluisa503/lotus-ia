@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from app.core.security import decodificar_token
+from app.core.security import decodificar_token, descifrar_texto
 from app.db.session import get_db
 from app.repositories.usuario_repository import UsuarioRepository
 from app.schemas.auth import UsuarioActual
@@ -39,7 +39,9 @@ def obtener_usuario_actual(
     if usuario is None or not usuario.activo:
         raise _SESION_INVALIDA
 
-    return UsuarioActual(id=usuario.id, correo=usuario.correo, rol=rol)
+    return UsuarioActual(
+        id=usuario.id, correo=usuario.correo, nombre=descifrar_texto(usuario.nombre_cifrado), rol=rol
+    )
 
 
 def requerir_rol(*roles_permitidos: str):
@@ -54,6 +56,19 @@ def requerir_rol(*roles_permitidos: str):
         return usuario
 
     return _verificar
+
+
+def obtener_estudiante_id_actual(
+    usuario: UsuarioActual = Depends(requerir_rol("ESTUDIANTE")),
+    db: Session = Depends(get_db),
+) -> uuid.UUID:
+    """Igual que requerir_estudiante_autorizado pero SIN exigir que la
+    autorización ya esté completa -- para pantallas de solo lectura (el
+    perfil del estudiante) que deben poder verse incluso mientras está
+    pendiente."""
+    from app.repositories.estudiante_repository import EstudianteRepository
+
+    return EstudianteRepository(db).obtener_estudiante_id_de_usuario(usuario.id)
 
 
 def requerir_estudiante_autorizado(

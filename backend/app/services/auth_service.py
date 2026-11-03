@@ -142,6 +142,27 @@ class AuthService:
         self.db.commit()
         return aviso_correo
 
+    def actualizar_perfil(self, usuario_id: uuid.UUID, nombre: str, correo: str) -> Usuario:
+        usuario = self.usuarios.obtener_por_id(usuario_id)
+        if correo != usuario.correo:
+            existente = self.usuarios.obtener_por_correo(correo)
+            if existente is not None and existente.id != usuario.id:
+                raise CorreoYaRegistradoError()
+            usuario.correo = correo
+        usuario.nombre_cifrado = cifrar_texto(nombre)
+        self.db.commit()
+        self.db.refresh(usuario)
+        return usuario
+
+    def cambiar_contrasena(
+        self, usuario_id: uuid.UUID, contrasena_actual: str, nueva_contrasena: str
+    ) -> None:
+        usuario = self.usuarios.obtener_por_id(usuario_id)
+        if not verificar_contrasena(contrasena_actual, usuario.contrasena_hash):
+            raise CredencialesInvalidasError()
+        usuario.contrasena_hash = hashear_contrasena(nueva_contrasena)
+        self.db.commit()
+
     def login(self, datos: LoginRequest) -> tuple[str, Usuario]:
         usuario = self.usuarios.obtener_por_correo(datos.correo)
         if usuario is None or not usuario.activo:
