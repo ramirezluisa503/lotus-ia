@@ -12,6 +12,9 @@ class UsuarioRepository:
     def obtener_por_correo(self, correo: str) -> Usuario | None:
         return self.db.query(Usuario).filter(Usuario.correo == correo).first()
 
+    def obtener_por_documento_hash(self, documento_hash: str) -> Usuario | None:
+        return self.db.query(Usuario).filter(Usuario.documento_hash == documento_hash).first()
+
     def obtener_por_id(self, usuario_id: uuid.UUID) -> Usuario | None:
         return self.db.get(Usuario, usuario_id)
 

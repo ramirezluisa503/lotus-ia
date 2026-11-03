@@ -27,6 +27,8 @@ export default function Registro() {
     grado: "",
     correoEstudiante: "",
     parentesco: "MADRE",
+    fechaNacimiento: "",
+    aceptaDeclaracionLegal: false,
   });
   const [error, setError] = useState("");
   const [errores, setErrores] = useState({});
@@ -35,6 +37,17 @@ export default function Registro() {
   function actualizar(campo, valor) {
     setForm((prev) => ({ ...prev, [campo]: valor }));
     setErrores((prev) => ({ ...prev, [campo]: undefined }));
+  }
+
+  function calcularEdad(fechaNacimiento) {
+    const nacimiento = new Date(fechaNacimiento);
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - nacimiento.getFullYear();
+    const cumplioEsteAnio =
+      hoy.getMonth() > nacimiento.getMonth() ||
+      (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() >= nacimiento.getDate());
+    if (!cumplioEsteAnio) edad -= 1;
+    return edad;
   }
 
   function validar() {
@@ -47,11 +60,24 @@ export default function Registro() {
     if (!form.correo || !correoValido(form.correo)) {
       err.correo = "Ingresa un correo válido.";
     }
+    if (!form.documento || form.documento.trim().length < 5) {
+      err.documento = "Ingresa tu número de documento de identidad.";
+    }
     if (form.rol === "ESTUDIANTE" && !form.grado) {
       err.grado = "Selecciona tu grado (10° u 11°).";
     }
     if (form.rol === "ACUDIENTE" && (!form.correoEstudiante || !correoValido(form.correoEstudiante))) {
       err.correoEstudiante = "Indica un correo válido del estudiante.";
+    }
+    if (form.rol === "ACUDIENTE") {
+      if (!form.fechaNacimiento) {
+        err.fechaNacimiento = "Indica tu fecha de nacimiento.";
+      } else if (calcularEdad(form.fechaNacimiento) < 18) {
+        err.fechaNacimiento = "Debes ser mayor de edad para registrarte como acudiente.";
+      }
+      if (!form.aceptaDeclaracionLegal) {
+        err.aceptaDeclaracionLegal = "Debes aceptar la declaración para continuar.";
+      }
     }
     if (!form.contrasena || form.contrasena.length < 8) {
       err.contrasena = "Debe tener al menos 8 caracteres.";
@@ -78,10 +104,12 @@ export default function Registro() {
         correo: form.correo,
         contrasena: form.contrasena,
         rol: form.rol,
-        documento: form.rol === "ACUDIENTE" ? form.documento || undefined : undefined,
+        documento: form.documento,
         grado: form.rol === "ESTUDIANTE" ? Number(form.grado) : undefined,
         correo_estudiante: form.rol === "ACUDIENTE" ? form.correoEstudiante : undefined,
         parentesco: form.rol === "ACUDIENTE" ? form.parentesco : undefined,
+        fecha_nacimiento: form.rol === "ACUDIENTE" ? form.fechaNacimiento : undefined,
+        acepta_declaracion_legal: form.rol === "ACUDIENTE" ? form.aceptaDeclaracionLegal : undefined,
       });
       // Registro exitoso: iniciamos sesión automáticamente para no pedirle los
       // datos dos veces.
@@ -162,6 +190,18 @@ export default function Registro() {
             />
           </Field>
 
+          <Field label="Documento de identidad" id="documento" error={errores.documento}>
+            <input
+              id="documento"
+              type="text"
+              required
+              value={form.documento}
+              onChange={(e) => actualizar("documento", e.target.value)}
+              className={inputClasses(Boolean(errores.documento))}
+              placeholder="Cédula o tarjeta de identidad"
+            />
+          </Field>
+
           {form.rol === "ESTUDIANTE" && (
             <Field label="¿En qué grado estás?" id="grado" error={errores.grado}>
               <div
@@ -220,14 +260,14 @@ export default function Registro() {
                 </select>
               </Field>
 
-              <Field label="Documento (opcional)" id="documento">
+              <Field label="Fecha de nacimiento" id="fechaNacimiento" error={errores.fechaNacimiento}>
                 <input
-                  id="documento"
-                  type="text"
-                  value={form.documento}
-                  onChange={(e) => actualizar("documento", e.target.value)}
-                  className={inputClasses(false)}
-                  placeholder="Cédula de ciudadanía"
+                  id="fechaNacimiento"
+                  type="date"
+                  required
+                  value={form.fechaNacimiento}
+                  onChange={(e) => actualizar("fechaNacimiento", e.target.value)}
+                  className={inputClasses(Boolean(errores.fechaNacimiento))}
                 />
               </Field>
             </>
@@ -247,6 +287,31 @@ export default function Registro() {
             />
           </Field>
           </div>
+
+          {form.rol === "ACUDIENTE" && (
+            <div>
+              <label
+                className={`flex items-start gap-2 rounded-lg border px-3 py-2.5 text-xs text-navy/70 ${
+                  errores.aceptaDeclaracionLegal ? "border-red-400" : "border-navy/15"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={form.aceptaDeclaracionLegal}
+                  onChange={(e) => actualizar("aceptaDeclaracionLegal", e.target.checked)}
+                />
+                <span>
+                  Declaro, bajo las consecuencias legales de la Ley 1581 de 2012, que
+                  soy mayor de edad y que tengo la patria potestad o representación
+                  legal del estudiante al que voy a autorizar.
+                </span>
+              </label>
+              {errores.aceptaDeclaracionLegal && (
+                <p className="mt-1.5 text-xs text-red-600">{errores.aceptaDeclaracionLegal}</p>
+              )}
+            </div>
+          )}
 
           <Button type="submit" variant="primary" className="w-full" disabled={enviando}>
             {enviando ? "Creando cuenta..." : "Crear mi cuenta"}

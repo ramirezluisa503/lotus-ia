@@ -18,6 +18,10 @@ class EstudianteNoEncontradoError(Exception):
     """No existe un usuario con rol ESTUDIANTE registrado con ese correo."""
 
 
+class DocumentoYaRegistradoError(Exception):
+    """Ya existe una cuenta registrada con ese número de documento."""
+
+
 class AutorizacionIncompletaError(Exception):
     """Falta el consentimiento del acudiente o el asentimiento del estudiante."""
 

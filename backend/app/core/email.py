@@ -21,3 +21,22 @@ def enviar_correo_recuperacion(destinatario: str, enlace: str) -> None:
         servidor.starttls()
         servidor.login(settings.smtp_user, settings.smtp_password)
         servidor.send_message(mensaje)
+
+
+def enviar_correo_aviso_acudiente(destinatario: str, nombre_acudiente: str, parentesco_etiqueta: str) -> None:
+    cuerpo = (
+        f"{parentesco_etiqueta} ({nombre_acudiente}) se registró en Lotus.IA como tu "
+        "acudiente y debe autorizar tu participación antes de que puedas continuar "
+        "con el proceso.\n\n"
+        "Si no reconoces este registro, o crees que alguien se hizo pasar por tu "
+        "acudiente, contáctanos de inmediato respondiendo este correo."
+    )
+    mensaje = MIMEText(cuerpo)
+    mensaje["Subject"] = "Alguien se registró como tu acudiente en Lotus.IA"
+    mensaje["From"] = settings.email_from
+    mensaje["To"] = destinatario
+
+    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as servidor:
+        servidor.starttls()
+        servidor.login(settings.smtp_user, settings.smtp_password)
+        servidor.send_message(mensaje)

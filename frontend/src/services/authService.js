@@ -9,6 +9,8 @@ export function registrar({
   grado,
   correo_estudiante,
   parentesco,
+  fecha_nacimiento,
+  acepta_declaracion_legal,
 }) {
   return api
     .post("/auth/registro", {
@@ -20,6 +22,8 @@ export function registrar({
       grado,
       correo_estudiante,
       parentesco,
+      fecha_nacimiento,
+      acepta_declaracion_legal,
     })
     .then((res) => res.data);
 }

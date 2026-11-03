@@ -21,13 +21,19 @@ CREATE TABLE auth.usuarios (
   correo             CITEXT       NOT NULL UNIQUE,
   contrasena_hash    VARCHAR(60)  NOT NULL,              -- bcrypt
   nombre_cifrado     BYTEA        NOT NULL,               -- cifrado en la aplicación
-  documento_cifrado  BYTEA,                                -- solo acudientes
+  documento_cifrado  BYTEA        NOT NULL,                -- cifrado en la aplicación
+  documento_hash     CHAR(64)     NOT NULL,                -- SHA-256 del documento (solo dígitos), para detectar duplicados sin exponerlo
+  fecha_nacimiento   DATE,                                 -- obligatoria para acudientes (verificación de mayoría de edad)
+  acepta_declaracion_legal BOOLEAN NOT NULL DEFAULT FALSE,  -- declaración de responsabilidad legal (solo acudientes)
   rol_id             SMALLINT     NOT NULL REFERENCES auth.roles(id),
   activo             BOOLEAN      NOT NULL DEFAULT TRUE,
   intentos_fallidos  SMALLINT     NOT NULL DEFAULT 0,
   creado_en          TIMESTAMPTZ  NOT NULL DEFAULT now(),
   ultimo_acceso      TIMESTAMPTZ
 );
+-- Un mismo número de documento no puede usarse en dos cuentas (evita que un
+-- estudiante se registre como su propio acudiente con su misma cédula/T.I.).
+CREATE UNIQUE INDEX idx_usuarios_documento_hash ON auth.usuarios(documento_hash);
 
 CREATE TABLE auth.vinculos_acudiente (
   acudiente_id            UUID NOT NULL REFERENCES auth.usuarios(id) ON DELETE CASCADE,

@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, LargeBinary, SmallInteger, String, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, LargeBinary, SmallInteger, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -18,6 +18,9 @@ class Usuario(Base):
     contrasena_hash: Mapped[str] = mapped_column(String(60), nullable=False)
     nombre_cifrado: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     documento_cifrado: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+    documento_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    fecha_nacimiento: Mapped[date | None] = mapped_column(Date, nullable=True)
+    acepta_declaracion_legal: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     rol_id: Mapped[int] = mapped_column(SmallInteger, ForeignKey("auth.roles.id"), nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     intentos_fallidos: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)

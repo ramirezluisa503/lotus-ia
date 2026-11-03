@@ -7,6 +7,7 @@ from app.core.exceptions import (
     CorreoYaRegistradoError,
     CredencialesInvalidasError,
     CuentaBloqueadaError,
+    DocumentoYaRegistradoError,
     EstudianteNoEncontradoError,
     TokenRecuperacionInvalidoError,
 )
@@ -16,6 +17,7 @@ from app.core.security import (
     crear_token,
     generar_token_recuperacion,
     hashear_contrasena,
+    hashear_documento,
     hashear_token_recuperacion,
     verificar_contrasena,
 )
@@ -43,10 +45,19 @@ class AuthService:
         self.vinculos = VinculoAcudienteRepository(db)
         self.tokens_recuperacion = TokenRecuperacionRepository(db)
 
-    def registrar(self, datos: RegistroRequest) -> Usuario:
+    def registrar(self, datos: RegistroRequest) -> tuple[Usuario, tuple[str, str, str] | None]:
+        """Devuelve (usuario_creado, aviso_correo). aviso_correo es
+        (correo_destino, nombre_acudiente, etiqueta_parentesco) cuando se
+        registró un acudiente -- quien llame programa el envío del correo
+        de aviso al estudiante; o None si se registró un estudiante."""
         if self.usuarios.obtener_por_correo(datos.correo) is not None:
             raise CorreoYaRegistradoError()
 
+        documento_hash = hashear_documento(datos.documento)
+        if self.usuarios.obtener_por_documento_hash(documento_hash) is not None:
+            raise DocumentoYaRegistradoError()
+
+        estudiante_usuario = None
         if datos.rol == "ACUDIENTE":
             estudiante_usuario = self.usuarios.obtener_por_correo(datos.correo_estudiante)
             if estudiante_usuario is None or estudiante_usuario.rol.nombre != "ESTUDIANTE":
@@ -60,12 +71,16 @@ class AuthService:
             correo=datos.correo,
             contrasena_hash=hashear_contrasena(datos.contrasena),
             nombre_cifrado=cifrar_texto(datos.nombre),
-            documento_cifrado=cifrar_texto(datos.documento) if datos.documento else None,
+            documento_cifrado=cifrar_texto(datos.documento),
+            documento_hash=documento_hash,
+            fecha_nacimiento=datos.fecha_nacimiento,
+            acepta_declaracion_legal=datos.acepta_declaracion_legal,
             rol_id=rol.id,
         )
         self.db.add(usuario)
         self.db.flush()  # asigna usuario.id sin cerrar la transacción
 
+        aviso_correo = None
         if datos.rol == "ESTUDIANTE":
             estudiante = self.estudiantes.crear(Estudiante(grado=datos.grado))
             self.estudiantes.vincular_usuario(usuario.id, estudiante.id)
@@ -83,10 +98,11 @@ class AuthService:
                 f"{etiqueta} se registró en Lotus.IA y debe autorizar tu participación.",
                 "/autorizacion",
             )
+            aviso_correo = (estudiante_usuario.correo, datos.nombre, etiqueta)
 
         self.db.commit()
         self.db.refresh(usuario)
-        return usuario
+        return usuario, aviso_correo
 
     def login(self, datos: LoginRequest) -> tuple[str, Usuario]:
         usuario = self.usuarios.obtener_por_correo(datos.correo)

@@ -2,11 +2,12 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import obtener_usuario_actual
-from app.core.email import enviar_correo_recuperacion
+from app.core.email import enviar_correo_aviso_acudiente, enviar_correo_recuperacion
 from app.core.exceptions import (
     CorreoYaRegistradoError,
     CredencialesInvalidasError,
     CuentaBloqueadaError,
+    DocumentoYaRegistradoError,
     EstudianteNoEncontradoError,
     TokenRecuperacionInvalidoError,
 )
@@ -27,18 +28,28 @@ router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
 
 @router.post("/registro", response_model=RegistroResponse, status_code=status.HTTP_201_CREATED)
-def registrar(datos: RegistroRequest, db: Session = Depends(get_db)):
+def registrar(datos: RegistroRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     try:
-        usuario = AuthService(db).registrar(datos)
+        usuario, aviso = AuthService(db).registrar(datos)
     except CorreoYaRegistradoError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Ya existe una cuenta registrada con ese correo.",
         )
+    except DocumentoYaRegistradoError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ese número de documento ya está registrado en otra cuenta.",
+        )
     except EstudianteNoEncontradoError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No encontramos un estudiante registrado con ese correo. Pídele que cree su cuenta primero.",
+        )
+    if aviso is not None:
+        correo_destino, nombre_acudiente, parentesco_etiqueta = aviso
+        background_tasks.add_task(
+            enviar_correo_aviso_acudiente, correo_destino, nombre_acudiente, parentesco_etiqueta
         )
     return RegistroResponse(id=usuario.id, correo=usuario.correo, rol=datos.rol)
 

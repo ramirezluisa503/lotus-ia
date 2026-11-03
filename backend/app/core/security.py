@@ -41,6 +41,17 @@ def descifrar_texto(valor_cifrado: bytes) -> str:
     return _fernet().decrypt(bytes(valor_cifrado)).decode("utf-8")
 
 
+# ---------- Documento de identidad ----------
+# Nunca se compara en texto plano ni cifrado (Fernet no es determinista):
+# se guarda también un hash para poder detectar el mismo documento
+# registrado dos veces (p. ej. un estudiante usando su propia cédula para
+# registrarse como su propio acudiente).
+
+def hashear_documento(documento: str) -> str:
+    solo_digitos = "".join(c for c in documento if c.isdigit())
+    return hashlib.sha256(solo_digitos.encode("utf-8")).hexdigest()
+
+
 # ---------- JWT ----------
 
 def crear_token(usuario_id: str, rol: str) -> str:
