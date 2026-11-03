@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Oferta from "./pages/Oferta";
 import OlvideContrasena from "./pages/OlvideContrasena";
 import Panel from "./pages/Panel";
+import Perfil from "./pages/Perfil";
 import Registro from "./pages/Registro";
 import RestablecerContrasena from "./pages/RestablecerContrasena";
 import Resultado from "./pages/Resultado";
@@ -33,6 +34,14 @@ export default function App() {
         element={
           <RutaProtegida>
             <Autorizacion />
+          </RutaProtegida>
+        }
+      />
+      <Route
+        path="/perfil"
+        element={
+          <RutaProtegida>
+            <Perfil />
           </RutaProtegida>
         }
       />

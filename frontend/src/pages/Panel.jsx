@@ -15,7 +15,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import {
   obtenerEstadoAutorizacion,
-  obtenerEstadoAutorizacionAcudiente,
+  obtenerEstudiantesACargo,
 } from "../services/consentimientoService";
 
 const ROL_ETIQUETA = {
@@ -63,17 +63,19 @@ const PASOS_ACUDIENTE = [
 ];
 
 function PanelAcudiente({ usuario }) {
-  const [estado, setEstado] = useState(null);
+  const [estudiantes, setEstudiantes] = useState([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    obtenerEstadoAutorizacionAcudiente()
-      .then(setEstado)
-      .catch(() => setEstado(null))
+    obtenerEstudiantesACargo()
+      .then(setEstudiantes)
+      .catch(() => setEstudiantes([]))
       .finally(() => setCargando(false));
   }, []);
 
-  const yaAutorizo = estado?.consentimiento_otorgado;
+  const totalEstudiantes = estudiantes.length;
+  const pendientes = estudiantes.filter((e) => !e.consentimiento_otorgado).length;
+  const yaAutorizo = totalEstudiantes > 0 && pendientes === 0;
 
   return (
     <div className="min-h-screen bg-ice">
@@ -108,6 +110,9 @@ function PanelAcudiente({ usuario }) {
                   {yaAutorizo ? "Revisar mi autorización" : "Autorizar participación"}
                   <IconArrowRight className="h-4 w-4" />
                 </Button>
+                <Button as={Link} to="/perfil" variant="secondary" size="lg">
+                  Ver mi perfil
+                </Button>
                 <Button as="a" href="#como-funciona" variant="ghost" size="lg">
                   ¿Cómo funciona?
                 </Button>
@@ -138,16 +143,13 @@ function PanelAcudiente({ usuario }) {
               </dl>
 
               <div className="mt-5 border-t border-navy/10 pt-4">
-                <p className="text-sm font-medium text-navy">Estado de autorización</p>
-                <p className="mt-1.5 flex items-center gap-2 text-sm text-navy/70">
-                  <span
-                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                      yaAutorizo ? "bg-mint/60 text-navy" : "bg-navy/10 text-navy/40"
-                    }`}
-                  >
-                    {yaAutorizo ? "✓" : "–"}
-                  </span>
-                  {cargando ? "Consultando..." : yaAutorizo ? "Ya autorizaste" : "Pendiente"}
+                <p className="text-sm font-medium text-navy">Estudiantes a tu cargo</p>
+                <p className="mt-1.5 text-sm text-navy/70">
+                  {cargando
+                    ? "Consultando..."
+                    : totalEstudiantes === 0
+                      ? "Todavía no tienes ninguno vinculado."
+                      : `${totalEstudiantes} ${totalEstudiantes === 1 ? "estudiante" : "estudiantes"}, ${pendientes} pendiente${pendientes === 1 ? "" : "s"} de autorizar.`}
                 </p>
               </div>
             </div>

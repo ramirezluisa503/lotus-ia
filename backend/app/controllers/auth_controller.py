@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import obtener_usuario_actual
+from app.core.deps import obtener_usuario_actual, requerir_rol
 from app.core.email import enviar_correo_aviso_acudiente, enviar_correo_recuperacion
 from app.core.exceptions import (
     CorreoYaRegistradoError,
@@ -9,6 +9,7 @@ from app.core.exceptions import (
     CuentaBloqueadaError,
     DocumentoYaRegistradoError,
     EstudianteNoEncontradoError,
+    EstudianteYaVinculadoError,
     TokenRecuperacionInvalidoError,
 )
 from app.db.session import get_db
@@ -21,6 +22,7 @@ from app.schemas.auth import (
     RestablecerContrasenaRequest,
     TokenResponse,
     UsuarioActual,
+    VincularEstudianteRequest,
 )
 from app.services.auth_service import AuthService
 
@@ -77,6 +79,33 @@ def iniciar_sesion(datos: LoginRequest, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UsuarioActual)
 def usuario_actual(usuario: UsuarioActual = Depends(obtener_usuario_actual)):
     return usuario
+
+
+@router.post("/vincular-estudiante", response_model=MensajeResponse)
+def vincular_estudiante(
+    datos: VincularEstudianteRequest,
+    background_tasks: BackgroundTasks,
+    usuario: UsuarioActual = Depends(requerir_rol("ACUDIENTE")),
+    db: Session = Depends(get_db),
+):
+    try:
+        correo_destino, nombre_acudiente, parentesco_etiqueta = AuthService(db).vincular_estudiante_adicional(
+            usuario.id, datos.correo_estudiante, datos.parentesco
+        )
+    except EstudianteNoEncontradoError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No encontramos un estudiante registrado con ese correo. Pídele que cree su cuenta primero.",
+        )
+    except EstudianteYaVinculadoError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ya tienes vinculado a ese estudiante.",
+        )
+    background_tasks.add_task(
+        enviar_correo_aviso_acudiente, correo_destino, nombre_acudiente, parentesco_etiqueta
+    )
+    return MensajeResponse(mensaje="Estudiante vinculado correctamente. Ya puedes autorizarlo.")
 
 
 @router.post("/olvide-contrasena", response_model=MensajeResponse)

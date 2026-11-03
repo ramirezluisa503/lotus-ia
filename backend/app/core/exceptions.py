@@ -30,6 +30,10 @@ class EstudianteNoVinculadoError(Exception):
     """El acudiente no tiene ningún estudiante vinculado todavía."""
 
 
+class EstudianteYaVinculadoError(Exception):
+    """Ese estudiante ya está vinculado a esta cuenta de acudiente."""
+
+
 class AreaAcademicaInvalidaError(Exception):
     """El nombre de área académica enviado no existe en el catálogo."""
 

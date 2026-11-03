@@ -4,11 +4,13 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import EstudianteNoVinculadoError
+from app.core.security import descifrar_texto
 from app.models.consentimiento import Consentimiento
 from app.repositories.consentimiento_repository import ConsentimientoRepository
 from app.repositories.estudiante_repository import EstudianteRepository
+from app.repositories.usuario_repository import UsuarioRepository
 from app.repositories.vinculo_acudiente_repository import VinculoAcudienteRepository
-from app.schemas.consentimiento import EstadoConsentimientoResponse
+from app.schemas.consentimiento import EstadoConsentimientoResponse, EstudianteVinculadoResponse
 from app.services.notificacion_service import crear_notificacion
 
 VERSION_TEXTO_VIGENTE = "1.0"
@@ -20,6 +22,7 @@ class ConsentimientoService:
         self.consentimientos = ConsentimientoRepository(db)
         self.estudiantes = EstudianteRepository(db)
         self.vinculos = VinculoAcudienteRepository(db)
+        self.usuarios = UsuarioRepository(db)
 
     def _guardar_decision(
         self, estudiante_id: uuid.UUID, tipo: str, aceptado: bool, acudiente_id: uuid.UUID | None
@@ -43,10 +46,9 @@ class ConsentimientoService:
         return self.consentimientos.guardar(nuevo)
 
     def otorgar_consentimiento_acudiente(
-        self, acudiente_usuario_id: uuid.UUID, aceptado: bool
+        self, acudiente_usuario_id: uuid.UUID, estudiante_usuario_id: uuid.UUID, aceptado: bool
     ) -> Consentimiento:
-        estudiante_usuario_id = self.vinculos.obtener_estudiante_vinculado(acudiente_usuario_id)
-        if estudiante_usuario_id is None:
+        if not self.vinculos.existe_vinculo(acudiente_usuario_id, estudiante_usuario_id):
             raise EstudianteNoVinculadoError()
         estudiante_id = self.estudiantes.obtener_estudiante_id_de_usuario(estudiante_usuario_id)
 
@@ -87,11 +89,32 @@ class ConsentimientoService:
 
         return resultado
 
-    def obtener_estado_para_acudiente(self, acudiente_usuario_id: uuid.UUID) -> EstadoConsentimientoResponse:
-        estudiante_usuario_id = self.vinculos.obtener_estudiante_vinculado(acudiente_usuario_id)
-        if estudiante_usuario_id is None:
-            raise EstudianteNoVinculadoError()
-        return self.obtener_estado(estudiante_usuario_id)
+    def listar_estudiantes_para_acudiente(
+        self, acudiente_usuario_id: uuid.UUID
+    ) -> list[EstudianteVinculadoResponse]:
+        resultado = []
+        for vinculo in self.vinculos.listar_vinculos(acudiente_usuario_id):
+            usuario_estudiante = self.usuarios.obtener_por_id(vinculo.estudiante_usuario_id)
+            if usuario_estudiante is None:
+                continue
+            estado = self.obtener_estado(vinculo.estudiante_usuario_id)
+            resultado.append(
+                EstudianteVinculadoResponse(
+                    estudiante_usuario_id=vinculo.estudiante_usuario_id,
+                    nombre=descifrar_texto(usuario_estudiante.nombre_cifrado),
+                    documento=(
+                        descifrar_texto(usuario_estudiante.documento_cifrado)
+                        if usuario_estudiante.documento_cifrado
+                        else ""
+                    ),
+                    correo=usuario_estudiante.correo,
+                    parentesco=vinculo.parentesco,
+                    consentimiento_otorgado=estado.consentimiento_otorgado,
+                    asentimiento_otorgado=estado.asentimiento_otorgado,
+                    puede_continuar=estado.puede_continuar,
+                )
+            )
+        return resultado
 
     def obtener_estado(self, estudiante_usuario_id: uuid.UUID) -> EstadoConsentimientoResponse:
         estudiante_id = self.estudiantes.obtener_estudiante_id_de_usuario(estudiante_usuario_id)

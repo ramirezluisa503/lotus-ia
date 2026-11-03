@@ -1,7 +1,9 @@
 import api from "./api";
 
-export function otorgarConsentimientoAcudiente(aceptado) {
-  return api.post("/consentimientos/acudiente", { aceptado }).then((res) => res.data);
+export function otorgarConsentimientoAcudiente(estudianteUsuarioId, aceptado) {
+  return api
+    .post("/consentimientos/acudiente", { estudiante_usuario_id: estudianteUsuarioId, aceptado })
+    .then((res) => res.data);
 }
 
 export function otorgarAsentimientoEstudiante(aceptado) {
@@ -12,6 +14,6 @@ export function obtenerEstadoAutorizacion() {
   return api.get("/consentimientos/estado").then((res) => res.data);
 }
 
-export function obtenerEstadoAutorizacionAcudiente() {
-  return api.get("/consentimientos/estado-acudiente").then((res) => res.data);
+export function obtenerEstudiantesACargo() {
+  return api.get("/consentimientos/estudiantes").then((res) => res.data);
 }

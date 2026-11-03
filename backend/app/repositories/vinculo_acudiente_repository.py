@@ -18,11 +18,20 @@ class VinculoAcudienteRepository:
             )
         )
 
-    def obtener_estudiante_vinculado(self, acudiente_id: uuid.UUID) -> uuid.UUID | None:
-        """Devuelve el usuario_id del primer estudiante vinculado a este acudiente."""
-        vinculo = (
+    def listar_vinculos(self, acudiente_id: uuid.UUID) -> list[VinculoAcudiente]:
+        return (
             self.db.query(VinculoAcudiente)
             .filter(VinculoAcudiente.acudiente_id == acudiente_id)
-            .first()
+            .all()
         )
-        return vinculo.estudiante_usuario_id if vinculo else None
+
+    def existe_vinculo(self, acudiente_id: uuid.UUID, estudiante_usuario_id: uuid.UUID) -> bool:
+        return (
+            self.db.query(VinculoAcudiente)
+            .filter(
+                VinculoAcudiente.acudiente_id == acudiente_id,
+                VinculoAcudiente.estudiante_usuario_id == estudiante_usuario_id,
+            )
+            .first()
+            is not None
+        )

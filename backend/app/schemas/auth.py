@@ -80,6 +80,11 @@ class UsuarioActual(BaseModel):
     rol: str
 
 
+class VincularEstudianteRequest(BaseModel):
+    correo_estudiante: EmailStr
+    parentesco: Parentesco
+
+
 class OlvideContrasenaRequest(BaseModel):
     correo: EmailStr
 

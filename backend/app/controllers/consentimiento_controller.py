@@ -6,9 +6,11 @@ from app.core.exceptions import EstudianteNoVinculadoError
 from app.db.session import get_db
 from app.schemas.auth import UsuarioActual
 from app.schemas.consentimiento import (
+    ConsentimientoAcudienteRequest,
     ConsentimientoRequest,
     ConsentimientoResponse,
     EstadoConsentimientoResponse,
+    EstudianteVinculadoResponse,
 )
 from app.services.consentimiento_service import ConsentimientoService
 
@@ -17,18 +19,18 @@ router = APIRouter(prefix="/consentimientos", tags=["Consentimiento"])
 
 @router.post("/acudiente", response_model=ConsentimientoResponse)
 def otorgar_consentimiento(
-    datos: ConsentimientoRequest,
+    datos: ConsentimientoAcudienteRequest,
     usuario: UsuarioActual = Depends(requerir_rol("ACUDIENTE")),
     db: Session = Depends(get_db),
 ):
     try:
         consentimiento = ConsentimientoService(db).otorgar_consentimiento_acudiente(
-            usuario.id, datos.aceptado
+            usuario.id, datos.estudiante_usuario_id, datos.aceptado
         )
     except EstudianteNoVinculadoError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No tienes ningún estudiante vinculado a tu cuenta.",
+            detail="Ese estudiante no está vinculado a tu cuenta.",
         )
     return consentimiento
 
@@ -53,15 +55,9 @@ def estado_autorizacion(
     return ConsentimientoService(db).obtener_estado(usuario.id)
 
 
-@router.get("/estado-acudiente", response_model=EstadoConsentimientoResponse)
-def estado_autorizacion_acudiente(
+@router.get("/estudiantes", response_model=list[EstudianteVinculadoResponse])
+def estudiantes_a_cargo(
     usuario: UsuarioActual = Depends(requerir_rol("ACUDIENTE")),
     db: Session = Depends(get_db),
 ):
-    try:
-        return ConsentimientoService(db).obtener_estado_para_acudiente(usuario.id)
-    except EstudianteNoVinculadoError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No tienes ningún estudiante vinculado a tu cuenta.",
-        )
+    return ConsentimientoService(db).listar_estudiantes_para_acudiente(usuario.id)

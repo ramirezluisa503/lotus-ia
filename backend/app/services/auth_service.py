@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
@@ -9,12 +10,14 @@ from app.core.exceptions import (
     CuentaBloqueadaError,
     DocumentoYaRegistradoError,
     EstudianteNoEncontradoError,
+    EstudianteYaVinculadoError,
     TokenRecuperacionInvalidoError,
 )
 from app.core.security import (
     TOKEN_RECUPERACION_MINUTOS,
     cifrar_texto,
     crear_token,
+    descifrar_texto,
     generar_token_recuperacion,
     hashear_contrasena,
     hashear_documento,
@@ -85,24 +88,59 @@ class AuthService:
             estudiante = self.estudiantes.crear(Estudiante(grado=datos.grado))
             self.estudiantes.vincular_usuario(usuario.id, estudiante.id)
         else:  # ACUDIENTE
-            self.vinculos.crear(
-                acudiente_id=usuario.id,
-                estudiante_usuario_id=estudiante_usuario.id,
-                parentesco=datos.parentesco,
+            aviso_correo = self._vincular_estudiante(
+                usuario.id, datos.nombre, estudiante_usuario, datos.parentesco
             )
-            etiqueta = _PARENTESCO_ETIQUETA.get(datos.parentesco, "Un acudiente")
-            crear_notificacion(
-                self.db,
-                estudiante_usuario.id,
-                "ACUDIENTE_REGISTRADO",
-                f"{etiqueta} se registró en Lotus.IA y debe autorizar tu participación.",
-                "/autorizacion",
-            )
-            aviso_correo = (estudiante_usuario.correo, datos.nombre, etiqueta)
 
         self.db.commit()
         self.db.refresh(usuario)
         return usuario, aviso_correo
+
+    def _vincular_estudiante(
+        self,
+        acudiente_usuario_id: uuid.UUID,
+        nombre_acudiente: str,
+        estudiante_usuario: Usuario,
+        parentesco: str,
+    ) -> tuple[str, str, str]:
+        """Crea el vínculo y la notificación; no hace commit (lo hace quien
+        llame). Devuelve (correo_destino, nombre_acudiente, etiqueta) para
+        que el controlador programe el correo de aviso."""
+        self.vinculos.crear(
+            acudiente_id=acudiente_usuario_id,
+            estudiante_usuario_id=estudiante_usuario.id,
+            parentesco=parentesco,
+        )
+        etiqueta = _PARENTESCO_ETIQUETA.get(parentesco, "Un acudiente")
+        crear_notificacion(
+            self.db,
+            estudiante_usuario.id,
+            "ACUDIENTE_REGISTRADO",
+            f"{etiqueta} se registró en Lotus.IA y debe autorizar tu participación.",
+            "/autorizacion",
+        )
+        return estudiante_usuario.correo, nombre_acudiente, etiqueta
+
+    def vincular_estudiante_adicional(
+        self, acudiente_usuario_id: uuid.UUID, correo_estudiante: str, parentesco: str
+    ) -> tuple[str, str, str]:
+        """Para un acudiente ya registrado que agrega otro estudiante a su
+        cargo (p. ej. un segundo hijo) sin crear una cuenta nueva."""
+        estudiante_usuario = self.usuarios.obtener_por_correo(correo_estudiante)
+        if estudiante_usuario is None or estudiante_usuario.rol.nombre != "ESTUDIANTE":
+            raise EstudianteNoEncontradoError()
+
+        if self.vinculos.existe_vinculo(acudiente_usuario_id, estudiante_usuario.id):
+            raise EstudianteYaVinculadoError()
+
+        acudiente = self.usuarios.obtener_por_id(acudiente_usuario_id)
+        nombre_acudiente = descifrar_texto(acudiente.nombre_cifrado)
+
+        aviso_correo = self._vincular_estudiante(
+            acudiente_usuario_id, nombre_acudiente, estudiante_usuario, parentesco
+        )
+        self.db.commit()
+        return aviso_correo
 
     def login(self, datos: LoginRequest) -> tuple[str, Usuario]:
         usuario = self.usuarios.obtener_por_correo(datos.correo)

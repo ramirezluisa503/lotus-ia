@@ -8,6 +8,7 @@ import { useAuth } from "../context/AuthContext";
 import { mensajeDeError } from "../services/api";
 import {
   obtenerEstadoAutorizacion,
+  obtenerEstudiantesACargo,
   otorgarAsentimientoEstudiante,
   otorgarConsentimientoAcudiente,
 } from "../services/consentimientoService";
@@ -108,8 +109,7 @@ function VistaEstudiante() {
   );
 }
 
-function VistaAcudiente() {
-  const [respuesta, setRespuesta] = useState(null); // true | false | null
+function TarjetaEstudianteAutorizar({ estudiante, onActualizado }) {
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
 
@@ -117,8 +117,8 @@ function VistaAcudiente() {
     setError("");
     setEnviando(true);
     try {
-      await otorgarConsentimientoAcudiente(aceptado);
-      setRespuesta(aceptado);
+      await otorgarConsentimientoAcudiente(estudiante.estudiante_usuario_id, aceptado);
+      onActualizado();
     } catch (err) {
       setError(mensajeDeError(err));
     } finally {
@@ -126,48 +126,89 @@ function VistaAcudiente() {
     }
   }
 
-  if (respuesta === true) {
-    return (
-      <Alert tipo="exito">
-        Autorizaste la participación de tu estudiante. Ya puede continuar con
-        su cuestionario.
-      </Alert>
-    );
+  return (
+    <div className="space-y-3 rounded-xl border border-navy/10 p-4">
+      <div>
+        <p className="text-sm font-semibold text-navy">{estudiante.nombre}</p>
+        <p className="text-xs text-navy/50">
+          {estudiante.correo} · Documento: {estudiante.documento || "sin registrar"}
+        </p>
+      </div>
+
+      <Alert tipo="error">{error}</Alert>
+
+      {estudiante.consentimiento_otorgado ? (
+        <Alert tipo="exito">
+          Ya autorizaste su participación. Puede continuar con su cuestionario.
+        </Alert>
+      ) : (
+        <>
+          <p className="text-xs text-navy/60">
+            Esta información se guarda sin su nombre (seudonimizada), se usa
+            solo para generar su recomendación vocacional, y puedes revocar
+            tu autorización cuando quieras.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="secondary" onClick={() => responder(false)} disabled={enviando}>
+              No autorizo
+            </Button>
+            <Button variant="primary" onClick={() => responder(true)} disabled={enviando}>
+              Autorizo
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function VistaAcudiente() {
+  const [estudiantes, setEstudiantes] = useState([]);
+  const [error, setError] = useState("");
+  const [cargando, setCargando] = useState(true);
+
+  function cargar() {
+    setCargando(true);
+    obtenerEstudiantesACargo()
+      .then(setEstudiantes)
+      .catch((err) => setError(mensajeDeError(err)))
+      .finally(() => setCargando(false));
   }
 
-  if (respuesta === false) {
-    return (
-      <Alert tipo="error">
-        Registramos que no autorizas la participación por ahora. Puedes
-        volver a esta página en cualquier momento para cambiarlo.
-      </Alert>
-    );
-  }
+  useEffect(cargar, []);
+
+  if (cargando) return <p className="text-sm text-navy/60">Cargando...</p>;
 
   return (
     <div className="space-y-4">
       <Alert tipo="error">{error}</Alert>
-      <div className="space-y-3 rounded-xl border border-navy/10 p-4 text-sm text-navy/70">
-        <p>
-          Tu estudiante quiere usar Lotus.IA, una herramienta orientativa que
-          recomienda un área de conocimiento según su desempeño académico,
-          sus intereses y su contexto socioeconómico.
-        </p>
-        <p>
-          Vamos a pedirle datos académicos, un cuestionario sobre su entorno y
-          un test de aptitudes. Esta información se guarda sin su nombre
-          (seudonimizada), se usa solo para este fin, y puedes revocar tu
-          autorización cuando quieras escribiéndonos.
-        </p>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <Button variant="secondary" onClick={() => responder(false)} disabled={enviando}>
-          No autorizo
-        </Button>
-        <Button variant="primary" onClick={() => responder(true)} disabled={enviando}>
-          Autorizo
-        </Button>
-      </div>
+
+      <p className="text-sm text-navy/70">
+        Tu estudiante quiere usar Lotus.IA, una herramienta orientativa que
+        recomienda un área de conocimiento según su desempeño académico, sus
+        intereses y su contexto socioeconómico.
+      </p>
+
+      {estudiantes.length === 0 ? (
+        <Alert tipo="error">
+          No tienes ningún estudiante vinculado todavía. Ve a tu perfil para
+          vincular uno.
+        </Alert>
+      ) : (
+        <div className="space-y-3">
+          {estudiantes.map((est) => (
+            <TarjetaEstudianteAutorizar
+              key={est.estudiante_usuario_id}
+              estudiante={est}
+              onActualizado={cargar}
+            />
+          ))}
+        </div>
+      )}
+
+      <Link to="/perfil" className="block text-center text-sm font-medium text-teal hover:underline">
+        Ir a mi perfil →
+      </Link>
     </div>
   );
 }
