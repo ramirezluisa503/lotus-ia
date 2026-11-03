@@ -43,7 +43,8 @@ class CuestionarioRepository:
             for campo in (
                 "estrato", "rango_ingresos", "personas_hogar", "educacion_madre",
                 "educacion_padre", "ocupacion_hogar", "tiene_internet",
-                "tiene_computador", "recibe_apoyo_estatal", "trabaja",
+                "tiene_computador", "tiene_lavadora", "tiene_automovil",
+                "recibe_apoyo_estatal", "trabaja",
             ):
                 setattr(existente, campo, getattr(datos, campo))
             return existente

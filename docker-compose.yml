@@ -12,6 +12,10 @@ services:
     volumes:
       - lotusia_db_data:/var/lib/postgresql/data
       - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./backend/db/seed_modelo_placeholder.sql:/docker-entrypoint-initdb.d/02-seed_modelo.sql:ro
+      - ./backend/db/seed_instrumento_demo.sql:/docker-entrypoint-initdb.d/03-seed_instrumento.sql:ro
+      - ./backend/db/seed_oferta_demo.sql:/docker-entrypoint-initdb.d/04-seed_oferta.sql:ro
+      - ./backend/db/seed_oferta_virtual.sql:/docker-entrypoint-initdb.d/05-seed_oferta_virtual.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U lotusia -d lotusia"]
       interval: 5s

@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -25,8 +26,11 @@ class ConsentimientoService:
     ) -> Consentimiento:
         existente = self.consentimientos.obtener_vigente(estudiante_id, tipo, VERSION_TEXTO_VIGENTE)
         if existente:
+            if aceptado:
+                existente.revocado_en = None
+            elif existente.aceptado:  # antes estaba aceptado y ahora se retira: es una revocación
+                existente.revocado_en = datetime.now(timezone.utc)
             existente.aceptado = aceptado
-            existente.revocado_en = None if aceptado else existente.revocado_en
             return self.consentimientos.guardar(existente)
 
         nuevo = Consentimiento(

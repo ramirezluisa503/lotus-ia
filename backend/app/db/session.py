@@ -7,7 +7,13 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
-engine = create_engine(settings.database_url, pool_pre_ping=True)
+# Los modelos usan el esquema "auth"; schema_translate_map lo redirige a
+# esquema_identidad (p. ej. "identidad" en Supabase) sin tocar los modelos.
+engine = create_engine(
+    settings.database_url,
+    pool_pre_ping=True,
+    execution_options={"schema_translate_map": {"auth": settings.esquema_identidad}},
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=True, autocommit=False)
 
 

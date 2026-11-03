@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     fernet_key: str = ""
     cors_origin: str = "http://localhost:5173"
     frontend_url: str = "http://localhost:5173"
+    # Esquema de usuarios/roles: "auth" en Postgres local, "identidad" en
+    # Supabase (allá "auth" ya existe y le pertenece a Supabase).
+    esquema_identidad: str = "auth"
 
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587

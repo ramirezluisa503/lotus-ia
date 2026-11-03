@@ -5,7 +5,7 @@
 -- =========================================================
 CREATE EXTENSION IF NOT EXISTS citext;
 
-CREATE SCHEMA IF NOT EXISTS identidad; -- identidad y acceso
+CREATE SCHEMA IF NOT EXISTS identidad; -- identidad y acceso (en Supabase "auth" ya existe y es de Supabase)
 CREATE SCHEMA IF NOT EXISTS app;  -- datos del proceso vocacional (seudonimizados)
 
 -- ---------------- ESQUEMA identidad (equivalente a "auth") ----------------
@@ -55,6 +55,18 @@ CREATE TABLE identidad.auditoria (
   fecha       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE identidad.notificaciones (
+  id          BIGSERIAL PRIMARY KEY,
+  usuario_id  UUID NOT NULL REFERENCES identidad.usuarios(id) ON DELETE CASCADE,
+  tipo        VARCHAR(40) NOT NULL, -- ACUDIENTE_AUTORIZO, ACUDIENTE_DESAUTORIZO, ACUDIENTE_REGISTRADO, RECOMENDACION_LISTA...
+  mensaje     VARCHAR(300) NOT NULL,
+  enlace      VARCHAR(100),         -- ruta del frontend a la que lleva al hacer clic
+  leida       BOOLEAN NOT NULL DEFAULT FALSE,
+  creada_en   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_notificaciones_usuario ON identidad.notificaciones(usuario_id, creada_en DESC);
+
 -- ---------------- ESQUEMA app ----------------
 
 CREATE TABLE app.estudiantes (
@@ -65,6 +77,14 @@ CREATE TABLE app.estudiantes (
                      CHECK (genero IN ('FEMENINO','MASCULINO','OTRO','PREFIERE_NO_DECIR')),
   zona              VARCHAR(6) CHECK (zona IN ('URBANA','RURAL')),
   tipo_institucion  VARCHAR(7) CHECK (tipo_institucion IN ('PUBLICA','PRIVADA')),
+  -- Variables del colegio requeridas por el modelo de IA (ver backend/ml/README.md)
+  cole_caracter         VARCHAR(20) CHECK (cole_caracter IN ('ACADEMICO','TECNICO','TECNICO_ACADEMICO','NO_APLICA')),
+  cole_jornada          VARCHAR(10) CHECK (cole_jornada IN ('MANANA','TARDE','NOCHE','COMPLETA','SABATINA','UNICA')),
+  puntaje_global_icfes  SMALLINT CHECK (puntaje_global_icfes BETWEEN 0 AND 500),
+  desempeno_ingles      VARCHAR(2) CHECK (desempeno_ingles IN ('A-','A1','A2','B1','B+')),
+  -- TRUE si los puntajes vienen de un simulacro/pre-ICFES (p. ej. grado 10,
+  -- que aún no presenta el Saber 11 real) en vez del resultado oficial.
+  es_puntaje_simulacro  BOOLEAN NOT NULL DEFAULT FALSE,
   estado_proceso    VARCHAR(15) NOT NULL DEFAULT 'REGISTRADO'
                      CHECK (estado_proceso IN ('REGISTRADO','AUTORIZADO','DATOS_COMPLETOS','RECOMENDADO')),
   creado_en         TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -97,7 +117,9 @@ CREATE TABLE app.areas_academicas (        -- Matemáticas, Lectura crítica, Ci
 CREATE TABLE app.rendimiento_academico (
   estudiante_id  UUID NOT NULL REFERENCES app.estudiantes(id) ON DELETE CASCADE,
   area_id        SMALLINT NOT NULL REFERENCES app.areas_academicas(id),
-  nota           NUMERIC(2,1) NOT NULL CHECK (nota BETWEEN 1.0 AND 5.0),
+  -- Puntaje ICFES Saber 11 (0-100), no nota escolar: el modelo de IA se
+  -- entrenó con puntajes ICFES (ver backend/ml/README.md).
+  nota           NUMERIC(5,2) NOT NULL CHECK (nota BETWEEN 0 AND 100),
   PRIMARY KEY (estudiante_id, area_id)
 );
 
@@ -106,11 +128,13 @@ CREATE TABLE app.datos_socioeconomicos (
   estrato                SMALLINT CHECK (estrato BETWEEN 0 AND 6), -- 0 = sin estrato
   rango_ingresos         VARCHAR(10), -- en salarios mínimos: '<1','1-2','2-3','3-5','>5'
   personas_hogar         SMALLINT CHECK (personas_hogar BETWEEN 1 AND 20),
-  educacion_madre        VARCHAR(30),
-  educacion_padre        VARCHAR(30),
+  educacion_madre        VARCHAR(50), -- etiquetas largas, ver backend/ml/README.md
+  educacion_padre        VARCHAR(50),
   ocupacion_hogar        VARCHAR(40),
   tiene_internet         BOOLEAN,
   tiene_computador       BOOLEAN,
+  tiene_lavadora         BOOLEAN, -- requerido por el modelo de IA
+  tiene_automovil        BOOLEAN, -- requerido por el modelo de IA
   recibe_apoyo_estatal   BOOLEAN,
   trabaja                BOOLEAN,
   actualizado_en         TIMESTAMPTZ NOT NULL DEFAULT now()

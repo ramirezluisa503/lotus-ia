@@ -48,13 +48,13 @@ cd lotus-ia
 docker compose up -d
 ```
 
-Esto crea el contenedor `lotusia_db` y aplica `backend/db/schema.sql` automáticamente
-la primera vez (si la base de datos ya existía de antes, corre también los
-`backend/db/migration_*.sql` pendientes a mano).
+Esto crea el contenedor `lotusia_db` y, la primera vez, aplica automáticamente
+`backend/db/schema.sql` y los datos de ejemplo `backend/db/seed_*.sql`
+(instituciones, carreras, becas, el test psicométrico y el modelo de IA activo).
+Sin los seeds la recomendación falla porque no hay modelo activo.
 
-Para tener datos de ejemplo (instituciones, carreras, becas, el test psicométrico
-y el modelo de IA activo), corre también los archivos `backend/db/seed_*.sql` —
-no se aplican solos, hay que correrlos a mano una vez:
+Si la base de datos ya existía de antes, no se aplica nada solo: corre a mano los
+`backend/db/migration_*.sql` pendientes y los seeds que te falten:
 
 ```bash
 cat backend/db/seed_instrumento_demo.sql | docker exec -i lotusia_db psql -U lotusia -d lotusia

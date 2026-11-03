@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-export default function Logo({ className = "" }) {
+// variante="claro" para usarlo sobre fondos oscuros o fotos (p. ej. la portada).
+export default function Logo({ className = "", variante = "oscuro" }) {
   const { usuario } = useAuth();
   const destino = !usuario ? "/" : usuario.rol === "ADMINISTRADOR" ? "/admin" : "/panel";
 
@@ -22,8 +23,8 @@ export default function Logo({ className = "" }) {
         />
       </svg>
       <span className="text-xl font-semibold tracking-tight">
-        <span className="text-teal">Lotus</span>
-        <span className="text-navy">.IA</span>
+        <span className={variante === "claro" ? "text-mint" : "text-teal"}>Lotus</span>
+        <span className={variante === "claro" ? "text-white" : "text-navy"}>.IA</span>
       </span>
     </Link>
   );

@@ -95,20 +95,20 @@ export default function Registro() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-ice px-6 py-10">
-      <div className="w-full max-w-sm rounded-3xl border border-navy/5 bg-white p-8 shadow-xl shadow-teal/10">
+    <div className="flex min-h-svh items-center justify-center bg-ice p-4">
+      <div className="w-full max-w-2xl rounded-3xl border border-navy/5 bg-white px-6 py-6 shadow-xl shadow-teal/10 sm:px-10">
         <div className="flex justify-center">
           <Logo />
         </div>
 
-        <h1 className="mt-6 text-center text-lg font-semibold text-navy">
+        <h1 className="mt-3 text-center text-lg font-semibold text-navy">
           Crea tu cuenta
         </h1>
         <p className="mt-1 text-center text-sm text-navy/60">
           Empieza tu proceso de orientación vocacional
         </p>
 
-        <form onSubmit={manejarEnvio} className="mt-6 space-y-4">
+        <form onSubmit={manejarEnvio} className="mt-4 space-y-3">
           <Alert tipo="error">{error}</Alert>
 
           <Field label="¿Quién eres?" id="rol">
@@ -133,6 +133,8 @@ export default function Registro() {
             </div>
           </Field>
 
+          {/* Campos de dos en dos para que el formulario quepa sin bajar */}
+          <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Nombre completo" id="nombre" error={errores.nombre}>
             <input
               id="nombre"
@@ -199,11 +201,8 @@ export default function Registro() {
                   value={form.correoEstudiante}
                   onChange={(e) => actualizar("correoEstudiante", e.target.value)}
                   className={inputClasses(Boolean(errores.correoEstudiante))}
-                  placeholder="correo@del-estudiante.com"
+                  placeholder="Debe tener su cuenta creada"
                 />
-                <p className="mt-1.5 text-xs text-navy/50">
-                  El estudiante debe tener su cuenta creada primero.
-                </p>
               </Field>
 
               <Field label="Parentesco" id="parentesco">
@@ -221,7 +220,7 @@ export default function Registro() {
                 </select>
               </Field>
 
-              <Field label="Documento de identidad (opcional)" id="documento">
+              <Field label="Documento (opcional)" id="documento">
                 <input
                   id="documento"
                   type="text"
@@ -247,13 +246,14 @@ export default function Registro() {
               placeholder="Mínimo 8 caracteres"
             />
           </Field>
+          </div>
 
           <Button type="submit" variant="primary" className="w-full" disabled={enviando}>
             {enviando ? "Creando cuenta..." : "Crear mi cuenta"}
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-navy/60">
+        <p className="mt-4 text-center text-sm text-navy/60">
           ¿Ya tienes cuenta?{" "}
           <Link to="/login" className="font-medium text-teal hover:underline">
             Inicia sesión

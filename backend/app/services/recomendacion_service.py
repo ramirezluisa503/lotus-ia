@@ -77,7 +77,9 @@ class RecomendacionService:
             "cole_caracter": _COLE_CARACTER.get(estudiante.cole_caracter),
             "cole_jornada": _COLE_JORNADA.get(estudiante.cole_jornada),
             "cole_depto_ubicacion": "RISARALDA",  # alcance del proyecto: solo Pereira/Risaralda
-            "fami_estratovivienda": socioeconomico.estrato,
+            # Estrato 0 ("sin estrato") se trató como dato faltante en el
+            # entrenamiento (paso3_limpieza.py) -> None para que use la mediana.
+            "fami_estratovivienda": socioeconomico.estrato or None,
             "fami_personashogar": socioeconomico.personas_hogar,
             "fami_tieneinternet": _SI_NO.get(socioeconomico.tiene_internet),
             "fami_tienecomputador": _SI_NO.get(socioeconomico.tiene_computador),

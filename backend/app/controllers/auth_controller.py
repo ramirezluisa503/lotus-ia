@@ -55,7 +55,10 @@ def iniciar_sesion(datos: LoginRequest, db: Session = Depends(get_db)):
     except CuentaBloqueadaError:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Demasiados intentos fallidos. Espera unos minutos antes de volver a intentarlo.",
+            detail=(
+                "Tu cuenta se bloqueó por demasiados intentos fallidos. Usa "
+                "\"¿Olvidaste tu contraseña?\" para crear una nueva y desbloquearla."
+            ),
         )
     return TokenResponse(access_token=token, rol=usuario.rol.nombre, usuario_id=usuario.id)
 
