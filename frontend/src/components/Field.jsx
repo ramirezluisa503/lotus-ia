@@ -1,4 +1,4 @@
-export default function Field({ label, id, error, children }) {
+export default function Field({ label, id, error, hint, children }) {
   return (
     <div className="text-left">
       <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-navy">
@@ -6,6 +6,7 @@ export default function Field({ label, id, error, children }) {
       </label>
       {children}
       {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
+      {!error && hint && <p className="mt-1.5 text-xs text-navy/40">{hint}</p>}
     </div>
   );
 }

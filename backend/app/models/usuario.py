@@ -21,6 +21,7 @@ class Usuario(Base):
     documento_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     fecha_nacimiento: Mapped[date | None] = mapped_column(Date, nullable=True)
     acepta_declaracion_legal: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    correo_confirmado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     rol_id: Mapped[int] = mapped_column(SmallInteger, ForeignKey("auth.roles.id"), nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     intentos_fallidos: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0)

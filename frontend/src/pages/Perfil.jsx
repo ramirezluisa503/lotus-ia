@@ -23,7 +23,7 @@ import {
   marcarTodasLeidas,
   obtenerNotificaciones,
 } from "../services/notificacionService";
-import { obtenerHistorialRecomendaciones } from "../services/recomendacionService";
+import { eliminarRecomendacion, obtenerHistorialRecomendaciones } from "../services/recomendacionService";
 
 const ROL_ETIQUETA = { ESTUDIANTE: "Estudiante", ACUDIENTE: "Acudiente", ADMINISTRADOR: "Administrador" };
 const PARENTESCOS = [
@@ -280,6 +280,7 @@ function SeccionRecomendaciones() {
   const [recomendaciones, setRecomendaciones] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [borrandoId, setBorrandoId] = useState(null);
 
   useEffect(() => {
     obtenerHistorialRecomendaciones()
@@ -289,6 +290,22 @@ function SeccionRecomendaciones() {
       })
       .finally(() => setCargando(false));
   }, []);
+
+  async function borrar(id) {
+    if (!window.confirm("¿Seguro que quieres borrar esta recomendación? No se puede deshacer.")) {
+      return;
+    }
+    setError("");
+    setBorrandoId(id);
+    try {
+      await eliminarRecomendacion(id);
+      setRecomendaciones((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      setError(mensajeDeError(err));
+    } finally {
+      setBorrandoId(null);
+    }
+  }
 
   return (
     <Seccion titulo="Tus recomendaciones">
@@ -301,9 +318,19 @@ function SeccionRecomendaciones() {
         <div className="space-y-2">
           {recomendaciones.map((r) => (
             <div key={r.id} className="rounded-xl border border-navy/10 p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-navy">{r.area}</p>
-                <span className="text-xs text-navy/40">{tiempoRelativo(r.generada_en)}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-navy/40">{tiempoRelativo(r.generada_en)}</span>
+                  <button
+                    type="button"
+                    onClick={() => borrar(r.id)}
+                    disabled={borrandoId === r.id}
+                    className="text-xs font-medium text-red-600 hover:underline disabled:opacity-50"
+                  >
+                    {borrandoId === r.id ? "Borrando..." : "Borrar"}
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-navy/60">
                 Nivel: {NIVEL_ETIQUETA[r.nivel_formacion] ?? r.nivel_formacion}

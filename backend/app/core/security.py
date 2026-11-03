@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import bcrypt
 import jwt
 from cryptography.fernet import Fernet
+from email_validator import EmailNotValidError, validate_email
 
 from app.core.config import get_settings
 
@@ -69,17 +70,31 @@ def decodificar_token(token: str) -> dict:
     return jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
 
 
-# ---------- Recuperación de contraseña ----------
-# Token aleatorio de un solo uso, guardado en auth.tokens_recuperacion
-# (Capítulo 9) -- nunca se guarda el token en texto plano, solo su hash,
+# ---------- Tokens aleatorios de un solo uso ----------
+# Usados tanto para recuperar contraseña como para confirmar el correo al
+# registrarse -- nunca se guarda el token en texto plano, solo su hash,
 # igual que con las contraseñas.
 
 TOKEN_RECUPERACION_MINUTOS = 30
+TOKEN_CONFIRMACION_HORAS = 48
 
 
-def generar_token_recuperacion() -> str:
+def generar_token_seguro() -> str:
     return secrets.token_urlsafe(32)
 
 
-def hashear_token_recuperacion(token: str) -> str:
+def hashear_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+# ---------- Validación de correo ----------
+# Además del formato (EmailStr), revisa que el dominio tenga servidores de
+# correo reales (registro MX, o A/AAAA como respaldo) para bloquear
+# correos inventados en dominios que no existen.
+
+def correo_existe(correo: str) -> bool:
+    try:
+        validate_email(correo, check_deliverability=True)
+        return True
+    except EmailNotValidError:
+        return False

@@ -25,6 +25,7 @@ CREATE TABLE auth.usuarios (
   documento_hash     CHAR(64)     NOT NULL,                -- SHA-256 del documento (solo dígitos), para detectar duplicados sin exponerlo
   fecha_nacimiento   DATE,                                 -- obligatoria para acudientes (verificación de mayoría de edad)
   acepta_declaracion_legal BOOLEAN NOT NULL DEFAULT FALSE,  -- declaración de responsabilidad legal (solo acudientes)
+  correo_confirmado  BOOLEAN      NOT NULL DEFAULT TRUE,     -- false hasta que confirme el enlace enviado al registrarse
   rol_id             SMALLINT     NOT NULL REFERENCES auth.roles(id),
   activo             BOOLEAN      NOT NULL DEFAULT TRUE,
   intentos_fallidos  SMALLINT     NOT NULL DEFAULT 0,
@@ -44,6 +45,14 @@ CREATE TABLE auth.vinculos_acudiente (
 );
 
 CREATE TABLE auth.tokens_recuperacion (
+  id          BIGSERIAL PRIMARY KEY,
+  usuario_id  UUID NOT NULL REFERENCES auth.usuarios(id) ON DELETE CASCADE,
+  token_hash  CHAR(64) NOT NULL UNIQUE,  -- SHA-256 del token enviado por correo
+  expira_en   TIMESTAMPTZ NOT NULL,
+  usado       BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE auth.tokens_confirmacion_correo (
   id          BIGSERIAL PRIMARY KEY,
   usuario_id  UUID NOT NULL REFERENCES auth.usuarios(id) ON DELETE CASCADE,
   token_hash  CHAR(64) NOT NULL UNIQUE,  -- SHA-256 del token enviado por correo

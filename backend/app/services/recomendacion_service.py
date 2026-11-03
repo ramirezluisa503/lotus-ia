@@ -2,7 +2,11 @@ import uuid
 
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import DatosInsuficientesError, ModeloNoDisponibleError
+from app.core.exceptions import (
+    DatosInsuficientesError,
+    ModeloNoDisponibleError,
+    RecomendacionNoEncontradaError,
+)
 from app.ia import modelo as capa_ia
 from app.models.recomendacion import Recomendacion
 from app.repositories.estudiante_repository import EstudianteRepository
@@ -153,3 +157,9 @@ class RecomendacionService:
 
     def historial(self, estudiante_id: uuid.UUID) -> list[RecomendacionResponse]:
         return [self._a_response(r) for r in self.repo.listar_historial(estudiante_id)]
+
+    def eliminar(self, estudiante_id: uuid.UUID, recomendacion_id: int) -> None:
+        recomendacion = self.repo.obtener_por_id(recomendacion_id)
+        if recomendacion is None or recomendacion.estudiante_id != estudiante_id:
+            raise RecomendacionNoEncontradaError()
+        self.repo.eliminar(recomendacion)

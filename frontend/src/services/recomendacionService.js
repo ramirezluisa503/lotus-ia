@@ -7,3 +7,7 @@ export function generarRecomendacion() {
 export function obtenerHistorialRecomendaciones() {
   return api.get("/recomendaciones").then((res) => res.data);
 }
+
+export function eliminarRecomendacion(id) {
+  return api.delete(`/recomendaciones/${id}`).then((res) => res.data);
+}

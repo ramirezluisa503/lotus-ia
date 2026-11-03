@@ -105,5 +105,18 @@ class RestablecerContrasenaRequest(BaseModel):
     nueva_contrasena: str = Field(min_length=8, max_length=72)
 
 
+class ConfirmarCorreoRequest(BaseModel):
+    token: str
+
+
+class ReenviarConfirmacionRequest(BaseModel):
+    correo: EmailStr
+
+
+class ValidarCorreoResponse(BaseModel):
+    valido: bool
+    mensaje: str | None = None
+
+
 class MensajeResponse(BaseModel):
     mensaje: str

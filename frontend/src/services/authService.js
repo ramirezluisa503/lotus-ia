@@ -61,3 +61,17 @@ export function restablecerContrasena({ token, nueva_contrasena }) {
     .post("/auth/restablecer-contrasena", { token, nueva_contrasena })
     .then((res) => res.data);
 }
+
+export function validarCorreo(correo) {
+  return api
+    .get("/auth/validar-correo", { params: { correo } })
+    .then((res) => res.data);
+}
+
+export function confirmarCorreo({ token }) {
+  return api.post("/auth/confirmar-correo", { token }).then((res) => res.data);
+}
+
+export function reenviarConfirmacion({ correo }) {
+  return api.post("/auth/reenviar-confirmacion", { correo }).then((res) => res.data);
+}

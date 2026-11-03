@@ -5,29 +5,35 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.exceptions import (
+    CorreoInexistenteError,
+    CorreoNoConfirmadoError,
     CorreoYaRegistradoError,
     CredencialesInvalidasError,
     CuentaBloqueadaError,
     DocumentoYaRegistradoError,
     EstudianteNoEncontradoError,
     EstudianteYaVinculadoError,
+    TokenConfirmacionInvalidoError,
     TokenRecuperacionInvalidoError,
 )
 from app.core.security import (
+    TOKEN_CONFIRMACION_HORAS,
     TOKEN_RECUPERACION_MINUTOS,
     cifrar_texto,
+    correo_existe,
     crear_token,
     descifrar_texto,
-    generar_token_recuperacion,
+    generar_token_seguro,
     hashear_contrasena,
     hashear_documento,
-    hashear_token_recuperacion,
+    hashear_token,
     verificar_contrasena,
 )
 from app.models.estudiante import Estudiante
 from app.models.usuario import Usuario
 from app.repositories.estudiante_repository import EstudianteRepository
 from app.repositories.rol_repository import RolRepository
+from app.repositories.token_confirmacion_repository import TokenConfirmacionRepository
 from app.repositories.token_recuperacion_repository import TokenRecuperacionRepository
 from app.repositories.usuario_repository import UsuarioRepository
 from app.repositories.vinculo_acudiente_repository import VinculoAcudienteRepository
@@ -47,12 +53,20 @@ class AuthService:
         self.estudiantes = EstudianteRepository(db)
         self.vinculos = VinculoAcudienteRepository(db)
         self.tokens_recuperacion = TokenRecuperacionRepository(db)
+        self.tokens_confirmacion = TokenConfirmacionRepository(db)
 
-    def registrar(self, datos: RegistroRequest) -> tuple[Usuario, tuple[str, str, str] | None]:
-        """Devuelve (usuario_creado, aviso_correo). aviso_correo es
-        (correo_destino, nombre_acudiente, etiqueta_parentesco) cuando se
-        registró un acudiente -- quien llame programa el envío del correo
-        de aviso al estudiante; o None si se registró un estudiante."""
+    def registrar(
+        self, datos: RegistroRequest
+    ) -> tuple[Usuario, tuple[str, str, str] | None, str]:
+        """Devuelve (usuario_creado, aviso_correo, enlace_confirmacion).
+        aviso_correo es (correo_destino, nombre_acudiente, etiqueta_parentesco)
+        cuando se registró un acudiente -- quien llame programa el envío del
+        correo de aviso al estudiante; o None si se registró un estudiante.
+        enlace_confirmacion siempre se devuelve: quien llame debe enviarlo
+        por correo para que el usuario pueda confirmar su cuenta."""
+        if not correo_existe(datos.correo):
+            raise CorreoInexistenteError()
+
         if self.usuarios.obtener_por_correo(datos.correo) is not None:
             raise CorreoYaRegistradoError()
 
@@ -78,6 +92,7 @@ class AuthService:
             documento_hash=documento_hash,
             fecha_nacimiento=datos.fecha_nacimiento,
             acepta_declaracion_legal=datos.acepta_declaracion_legal,
+            correo_confirmado=False,
             rol_id=rol.id,
         )
         self.db.add(usuario)
@@ -92,9 +107,16 @@ class AuthService:
                 usuario.id, datos.nombre, estudiante_usuario, datos.parentesco
             )
 
+        token = generar_token_seguro()
+        expira_en = datetime.now(timezone.utc) + timedelta(hours=TOKEN_CONFIRMACION_HORAS)
+        self.tokens_confirmacion.crear(usuario.id, hashear_token(token), expira_en)
+
         self.db.commit()
         self.db.refresh(usuario)
-        return usuario, aviso_correo
+
+        settings = get_settings()
+        enlace_confirmacion = f"{settings.frontend_url}/confirmar-correo?token={token}"
+        return usuario, aviso_correo, enlace_confirmacion
 
     def _vincular_estudiante(
         self,
@@ -176,6 +198,9 @@ class AuthService:
             self.usuarios.guardar(usuario)
             raise CredencialesInvalidasError()
 
+        if not usuario.correo_confirmado:
+            raise CorreoNoConfirmadoError()
+
         usuario.intentos_fallidos = 0
         self.usuarios.guardar(usuario)
 
@@ -190,9 +215,9 @@ class AuthService:
         if usuario is None or not usuario.activo:
             return None
 
-        token = generar_token_recuperacion()
+        token = generar_token_seguro()
         expira_en = datetime.now(timezone.utc) + timedelta(minutes=TOKEN_RECUPERACION_MINUTOS)
-        self.tokens_recuperacion.crear(usuario.id, hashear_token_recuperacion(token), expira_en)
+        self.tokens_recuperacion.crear(usuario.id, hashear_token(token), expira_en)
         self.db.commit()
 
         settings = get_settings()
@@ -200,7 +225,7 @@ class AuthService:
         return usuario.correo, enlace
 
     def restablecer_contrasena(self, token: str, nueva_contrasena: str) -> None:
-        registro = self.tokens_recuperacion.obtener_vigente(hashear_token_recuperacion(token))
+        registro = self.tokens_recuperacion.obtener_vigente(hashear_token(token))
         if registro is None or registro.expira_en < datetime.now(timezone.utc):
             raise TokenRecuperacionInvalidoError()
 
@@ -212,3 +237,35 @@ class AuthService:
         usuario.contrasena_hash = hashear_contrasena(nueva_contrasena)
         usuario.intentos_fallidos = 0
         self.db.commit()
+
+    def validar_correo(self, correo: str) -> bool:
+        return correo_existe(correo)
+
+    def confirmar_correo(self, token: str) -> None:
+        registro = self.tokens_confirmacion.obtener_vigente(hashear_token(token))
+        if registro is None or registro.expira_en < datetime.now(timezone.utc):
+            raise TokenConfirmacionInvalidoError()
+
+        usuario = self.usuarios.obtener_por_id(registro.usuario_id)
+        if usuario is None:
+            raise TokenConfirmacionInvalidoError()
+
+        registro.usado = True
+        usuario.correo_confirmado = True
+        self.db.commit()
+
+    def reenviar_confirmacion(self, correo: str) -> tuple[str, str] | None:
+        """Igual que solicitar_recuperacion: devuelve (correo_destino, enlace)
+        o None, sin revelar por qué, para no filtrar qué correos existen."""
+        usuario = self.usuarios.obtener_por_correo(correo)
+        if usuario is None or not usuario.activo or usuario.correo_confirmado:
+            return None
+
+        token = generar_token_seguro()
+        expira_en = datetime.now(timezone.utc) + timedelta(hours=TOKEN_CONFIRMACION_HORAS)
+        self.tokens_confirmacion.crear(usuario.id, hashear_token(token), expira_en)
+        self.db.commit()
+
+        settings = get_settings()
+        enlace = f"{settings.frontend_url}/confirmar-correo?token={token}"
+        return usuario.correo, enlace

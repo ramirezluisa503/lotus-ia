@@ -1,29 +1,39 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import obtener_usuario_actual, requerir_rol
-from app.core.email import enviar_correo_aviso_acudiente, enviar_correo_recuperacion
+from app.core.email import (
+    enviar_correo_aviso_acudiente,
+    enviar_correo_confirmacion,
+    enviar_correo_recuperacion,
+)
 from app.core.exceptions import (
+    CorreoInexistenteError,
+    CorreoNoConfirmadoError,
     CorreoYaRegistradoError,
     CredencialesInvalidasError,
     CuentaBloqueadaError,
     DocumentoYaRegistradoError,
     EstudianteNoEncontradoError,
     EstudianteYaVinculadoError,
+    TokenConfirmacionInvalidoError,
     TokenRecuperacionInvalidoError,
 )
 from app.db.session import get_db
 from app.schemas.auth import (
     ActualizarPerfilRequest,
     CambiarContrasenaRequest,
+    ConfirmarCorreoRequest,
     LoginRequest,
     MensajeResponse,
     OlvideContrasenaRequest,
+    ReenviarConfirmacionRequest,
     RegistroRequest,
     RegistroResponse,
     RestablecerContrasenaRequest,
     TokenResponse,
     UsuarioActual,
+    ValidarCorreoResponse,
     VincularEstudianteRequest,
 )
 from app.services.auth_service import AuthService
@@ -31,10 +41,24 @@ from app.services.auth_service import AuthService
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
 
+@router.get("/validar-correo", response_model=ValidarCorreoResponse)
+def validar_correo(correo: str = Query(min_length=3), db: Session = Depends(get_db)):
+    if AuthService(db).validar_correo(correo):
+        return ValidarCorreoResponse(valido=True)
+    return ValidarCorreoResponse(
+        valido=False, mensaje="Ese dominio de correo no existe o no puede recibir correos."
+    )
+
+
 @router.post("/registro", response_model=RegistroResponse, status_code=status.HTTP_201_CREATED)
 def registrar(datos: RegistroRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     try:
-        usuario, aviso = AuthService(db).registrar(datos)
+        usuario, aviso, enlace_confirmacion = AuthService(db).registrar(datos)
+    except CorreoInexistenteError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ese correo no existe o su dominio no puede recibir correos. Verifícalo e inténtalo de nuevo.",
+        )
     except CorreoYaRegistradoError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -55,6 +79,7 @@ def registrar(datos: RegistroRequest, background_tasks: BackgroundTasks, db: Ses
         background_tasks.add_task(
             enviar_correo_aviso_acudiente, correo_destino, nombre_acudiente, parentesco_etiqueta
         )
+    background_tasks.add_task(enviar_correo_confirmacion, usuario.correo, enlace_confirmacion)
     return RegistroResponse(id=usuario.id, correo=usuario.correo, rol=datos.rol)
 
 
@@ -75,7 +100,39 @@ def iniciar_sesion(datos: LoginRequest, db: Session = Depends(get_db)):
                 "\"¿Olvidaste tu contraseña?\" para crear una nueva y desbloquearla."
             ),
         )
+    except CorreoNoConfirmadoError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Debes confirmar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.",
+        )
     return TokenResponse(access_token=token, rol=usuario.rol.nombre, usuario_id=usuario.id)
+
+
+@router.post("/confirmar-correo", response_model=MensajeResponse)
+def confirmar_correo(datos: ConfirmarCorreoRequest, db: Session = Depends(get_db)):
+    try:
+        AuthService(db).confirmar_correo(datos.token)
+    except TokenConfirmacionInvalidoError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El enlace de confirmación no es válido o ya expiró. Solicita uno nuevo.",
+        )
+    return MensajeResponse(mensaje="Tu correo quedó confirmado. Ya puedes iniciar sesión.")
+
+
+@router.post("/reenviar-confirmacion", response_model=MensajeResponse)
+def reenviar_confirmacion(
+    datos: ReenviarConfirmacionRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    resultado = AuthService(db).reenviar_confirmacion(datos.correo)
+    if resultado is not None:
+        correo_destino, enlace = resultado
+        background_tasks.add_task(enviar_correo_confirmacion, correo_destino, enlace)
+    return MensajeResponse(
+        mensaje="Si ese correo está registrado y pendiente de confirmar, te enviamos un nuevo enlace."
+    )
 
 
 @router.get("/me", response_model=UsuarioActual)

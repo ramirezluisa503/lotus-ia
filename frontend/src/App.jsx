@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import RutaProtegida from "./components/RutaProtegida";
 import Admin from "./pages/admin/Admin";
 import Autorizacion from "./pages/Autorizacion";
+import ConfirmarCorreo from "./pages/ConfirmarCorreo";
 import Cuestionario from "./pages/cuestionario/Cuestionario";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -21,6 +22,7 @@ export default function App() {
       <Route path="/registro" element={<Registro />} />
       <Route path="/olvide-contrasena" element={<OlvideContrasena />} />
       <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
+      <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
       <Route
         path="/panel"
         element={

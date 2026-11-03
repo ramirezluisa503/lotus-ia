@@ -1,12 +1,11 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import Alert from "../components/Alert";
 import Button from "../components/Button";
 import Field, { inputClasses } from "../components/Field";
 import Logo from "../components/Logo";
-import { useAuth } from "../context/AuthContext";
 import { mensajeDeError } from "../services/api";
-import { registrar } from "../services/authService";
+import { registrar, validarCorreo } from "../services/authService";
 
 const PARENTESCOS = [
   { valor: "MADRE", etiqueta: "Madre" },
@@ -15,9 +14,6 @@ const PARENTESCOS = [
 ];
 
 export default function Registro() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-
   const [form, setForm] = useState({
     nombre: "",
     correo: "",
@@ -33,10 +29,33 @@ export default function Registro() {
   const [error, setError] = useState("");
   const [errores, setErrores] = useState({});
   const [enviando, setEnviando] = useState(false);
+  const [verificandoCorreo, setVerificandoCorreo] = useState(false);
+  const [registroExitoso, setRegistroExitoso] = useState(false);
+  const ultimoCorreoVerificado = useRef("");
 
   function actualizar(campo, valor) {
     setForm((prev) => ({ ...prev, [campo]: valor }));
     setErrores((prev) => ({ ...prev, [campo]: undefined }));
+  }
+
+  async function verificarDominioCorreo() {
+    const correo = form.correo.trim();
+    if (!correo || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo) || correo === ultimoCorreoVerificado.current) {
+      return;
+    }
+    ultimoCorreoVerificado.current = correo;
+    setVerificandoCorreo(true);
+    try {
+      const resultado = await validarCorreo(correo);
+      if (!resultado.valido) {
+        setErrores((prev) => ({ ...prev, correo: resultado.mensaje }));
+      }
+    } catch {
+      // Si la validación falla por una razón ajena al correo (red, etc.),
+      // no bloqueamos el registro: la revisión real ocurre en el backend.
+    } finally {
+      setVerificandoCorreo(false);
+    }
   }
 
   function calcularEdad(fechaNacimiento) {
@@ -111,15 +130,36 @@ export default function Registro() {
         fecha_nacimiento: form.rol === "ACUDIENTE" ? form.fechaNacimiento : undefined,
         acepta_declaracion_legal: form.rol === "ACUDIENTE" ? form.aceptaDeclaracionLegal : undefined,
       });
-      // Registro exitoso: iniciamos sesión automáticamente para no pedirle los
-      // datos dos veces.
-      await login({ correo: form.correo, contrasena: form.contrasena });
-      navigate("/autorizacion");
+      // Ya no iniciamos sesión automáticamente: primero debe confirmar su
+      // correo con el enlace que le acabamos de enviar.
+      setRegistroExitoso(true);
     } catch (err) {
       setError(mensajeDeError(err));
     } finally {
       setEnviando(false);
     }
+  }
+
+  if (registroExitoso) {
+    return (
+      <div className="flex min-h-svh items-center justify-center bg-ice p-4">
+        <div className="w-full max-w-sm rounded-3xl border border-navy/5 bg-white p-8 text-center shadow-xl shadow-teal/10">
+          <div className="flex justify-center">
+            <Logo />
+          </div>
+          <h1 className="mt-6 text-lg font-semibold text-navy">Revisa tu correo</h1>
+          <p className="mt-3 text-sm text-navy/60">
+            Te enviamos un enlace de confirmación a <strong>{form.correo}</strong>. Debes
+            abrirlo antes de poder iniciar sesión.
+          </p>
+          <Link to="/login" className="mt-6 block">
+            <Button variant="primary" className="w-full">
+              Ir a iniciar sesión
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -177,7 +217,12 @@ export default function Registro() {
             />
           </Field>
 
-          <Field label="Correo electrónico" id="correo" error={errores.correo}>
+          <Field
+            label="Correo electrónico"
+            id="correo"
+            error={errores.correo}
+            hint={verificandoCorreo ? "Verificando..." : undefined}
+          >
             <input
               id="correo"
               type="email"
@@ -185,6 +230,7 @@ export default function Registro() {
               autoComplete="email"
               value={form.correo}
               onChange={(e) => actualizar("correo", e.target.value)}
+              onBlur={verificarDominioCorreo}
               className={inputClasses(Boolean(errores.correo))}
               placeholder="tu@correo.com"
             />

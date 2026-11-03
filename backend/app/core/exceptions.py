@@ -14,6 +14,18 @@ class TokenRecuperacionInvalidoError(Exception):
     """El token de recuperación de contraseña es inválido, ya se usó o expiró."""
 
 
+class CorreoInexistenteError(Exception):
+    """El dominio del correo no existe o no puede recibir correos."""
+
+
+class CorreoNoConfirmadoError(Exception):
+    """El usuario todavía no confirmó su correo con el enlace enviado al registrarse."""
+
+
+class TokenConfirmacionInvalidoError(Exception):
+    """El token de confirmación de correo es inválido, ya se usó o expiró."""
+
+
 class EstudianteNoEncontradoError(Exception):
     """No existe un usuario con rol ESTUDIANTE registrado con ese correo."""
 

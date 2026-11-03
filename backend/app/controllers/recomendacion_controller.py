@@ -4,7 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import requerir_estudiante_autorizado
-from app.core.exceptions import DatosInsuficientesError, ModeloNoDisponibleError
+from app.core.exceptions import (
+    DatosInsuficientesError,
+    ModeloNoDisponibleError,
+    RecomendacionNoEncontradaError,
+)
 from app.db.session import get_db
 from app.schemas.recomendacion import RecomendacionResponse
 from app.services.recomendacion_service import RecomendacionService
@@ -37,3 +41,18 @@ def historial_recomendaciones(
     db: Session = Depends(get_db),
 ):
     return RecomendacionService(db).historial(estudiante_id)
+
+
+@router.delete("/{recomendacion_id}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_recomendacion(
+    recomendacion_id: int,
+    estudiante_id: uuid.UUID = Depends(requerir_estudiante_autorizado),
+    db: Session = Depends(get_db),
+):
+    try:
+        RecomendacionService(db).eliminar(estudiante_id, recomendacion_id)
+    except RecomendacionNoEncontradaError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No encontramos esa recomendación.",
+        )

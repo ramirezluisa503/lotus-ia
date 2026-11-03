@@ -23,6 +23,24 @@ def enviar_correo_recuperacion(destinatario: str, enlace: str) -> None:
         servidor.send_message(mensaje)
 
 
+def enviar_correo_confirmacion(destinatario: str, enlace: str) -> None:
+    cuerpo = (
+        "Gracias por registrarte en Lotus.IA.\n\n"
+        f"Confirma tu correo abriendo este enlace (válido por 48 horas):\n{enlace}\n\n"
+        "Hasta que lo confirmes no podrás iniciar sesión. Si no creaste esta "
+        "cuenta, puedes ignorar este correo."
+    )
+    mensaje = MIMEText(cuerpo)
+    mensaje["Subject"] = "Confirma tu correo en Lotus.IA"
+    mensaje["From"] = settings.email_from
+    mensaje["To"] = destinatario
+
+    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as servidor:
+        servidor.starttls()
+        servidor.login(settings.smtp_user, settings.smtp_password)
+        servidor.send_message(mensaje)
+
+
 def enviar_correo_aviso_acudiente(destinatario: str, nombre_acudiente: str, parentesco_etiqueta: str) -> None:
     cuerpo = (
         f"{parentesco_etiqueta} ({nombre_acudiente}) se registró en Lotus.IA como tu "

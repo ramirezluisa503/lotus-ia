@@ -50,6 +50,10 @@ class RecomendacionRepository:
     def obtener_por_id(self, recomendacion_id: int) -> Recomendacion | None:
         return self.db.get(Recomendacion, recomendacion_id)
 
+    def eliminar(self, recomendacion: Recomendacion) -> None:
+        self.db.delete(recomendacion)
+        self.db.commit()
+
     def tiene_encuesta(self, recomendacion_id: int) -> bool:
         return (
             self.db.query(EncuestaSatisfaccion)

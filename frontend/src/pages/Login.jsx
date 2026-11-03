@@ -6,6 +6,7 @@ import Field, { inputClasses } from "../components/Field";
 import Logo from "../components/Logo";
 import { useAuth } from "../context/AuthContext";
 import { mensajeDeError } from "../services/api";
+import { reenviarConfirmacion } from "../services/authService";
 
 export default function Login() {
   const { login } = useAuth();
@@ -15,18 +16,36 @@ export default function Login() {
   const [contrasena, setContrasena] = useState("");
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [correoSinConfirmar, setCorreoSinConfirmar] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
+  const [confirmacionReenviada, setConfirmacionReenviada] = useState(false);
 
   async function manejarEnvio(e) {
     e.preventDefault();
     setError("");
+    setCorreoSinConfirmar(false);
+    setConfirmacionReenviada(false);
     setEnviando(true);
     try {
       const usuario = await login({ correo, contrasena });
       navigate(usuario.rol === "ADMINISTRADOR" ? "/admin" : "/panel");
     } catch (err) {
       setError(mensajeDeError(err));
+      setCorreoSinConfirmar(err.response?.status === 403);
     } finally {
       setEnviando(false);
+    }
+  }
+
+  async function manejarReenviar() {
+    setReenviando(true);
+    try {
+      await reenviarConfirmacion({ correo });
+      setConfirmacionReenviada(true);
+    } catch (err) {
+      setError(mensajeDeError(err));
+    } finally {
+      setReenviando(false);
     }
   }
 
@@ -46,6 +65,19 @@ export default function Login() {
 
         <form onSubmit={manejarEnvio} className="mt-6 space-y-4">
           <Alert tipo="error">{error}</Alert>
+          {confirmacionReenviada && (
+            <Alert tipo="exito">Si tu correo está pendiente de confirmar, te enviamos un nuevo enlace.</Alert>
+          )}
+          {correoSinConfirmar && !confirmacionReenviada && (
+            <button
+              type="button"
+              onClick={manejarReenviar}
+              disabled={reenviando}
+              className="text-sm font-medium text-teal hover:underline"
+            >
+              {reenviando ? "Enviando..." : "Reenviar correo de confirmación"}
+            </button>
+          )}
 
           <Field label="Correo electrónico" id="correo">
             <input
