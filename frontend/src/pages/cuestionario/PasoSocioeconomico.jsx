@@ -147,7 +147,7 @@ export default function PasoSocioeconomico({ valores, errores = {}, onChange }) 
           onChange={(v) => onChange("tiene_lavadora", v)}
         />
         <CampoSiNo
-          etiqueta="¿Tienes automóvil en casa?"
+          etiqueta="¿Tienes automóvil?"
           valor={valores.tiene_automovil}
           onChange={(v) => onChange("tiene_automovil", v)}
         />
