@@ -50,6 +50,11 @@ class AreaAcademicaInvalidaError(Exception):
     """El nombre de área académica enviado no existe en el catálogo."""
 
 
+class PdfIcfesNoReconocidoError(Exception):
+    """El PDF subido no se pudo leer o no coincide con ningún formato
+    conocido del reporte de resultados del ICFES."""
+
+
 class InstrumentoNoDisponibleError(Exception):
     """No hay ningún instrumento psicométrico activo configurado."""
 

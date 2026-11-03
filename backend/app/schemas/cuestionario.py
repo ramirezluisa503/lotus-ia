@@ -37,6 +37,11 @@ class DatosAcademicosRequest(BaseModel):
     )
 
 
+class ExtraccionIcfesResponse(BaseModel):
+    notas: list[NotaArea]
+    desempeno_ingles: DesempenoIngles
+
+
 class DatosSociodemograficosRequest(BaseModel):
     edad: int = Field(ge=13, le=21)
     genero: Genero | None = None

@@ -1,8 +1,14 @@
 import uuid
+from io import BytesIO
 
+import pdfplumber
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import AreaAcademicaInvalidaError, InstrumentoNoDisponibleError
+from app.core.exceptions import (
+    AreaAcademicaInvalidaError,
+    InstrumentoNoDisponibleError,
+    PdfIcfesNoReconocidoError,
+)
 from app.models.datos_socioeconomicos import DatosSocioeconomicos
 from app.repositories.cuestionario_repository import CuestionarioRepository
 from app.schemas.cuestionario import (
@@ -11,6 +17,7 @@ from app.schemas.cuestionario import (
     DatosSocioeconomicosRequest,
     DimensionPuntaje,
     EstadoProcesoResponse,
+    ExtraccionIcfesResponse,
     InstrumentoActivoResponse,
     MisRespuestasResponse,
     NotaArea,
@@ -18,6 +25,7 @@ from app.schemas.cuestionario import (
     PreguntaResponse,
     RespuestasPsicometricoRequest,
 )
+from app.services.extractor_icfes import extraer_resultados_icfes
 
 
 class CuestionarioService:
@@ -38,6 +46,22 @@ class CuestionarioService:
         estudiante.es_puntaje_simulacro = datos.es_simulacro
         self.db.commit()
         return estudiante.estado_proceso
+
+    def extraer_academico_de_pdf(self, contenido_pdf: bytes) -> ExtraccionIcfesResponse:
+        try:
+            with pdfplumber.open(BytesIO(contenido_pdf)) as pdf:
+                texto = "\n".join(pagina.extract_text() or "" for pagina in pdf.pages)
+        except Exception:
+            raise PdfIcfesNoReconocidoError()
+
+        resultado = extraer_resultados_icfes(texto)
+        if resultado is None:
+            raise PdfIcfesNoReconocidoError()
+
+        return ExtraccionIcfesResponse(
+            notas=[NotaArea(area=area, nota=nota) for area, nota in resultado["notas"].items()],
+            desempeno_ingles=resultado["desempeno_ingles"],
+        )
 
     def obtener_mi_estado(self, estudiante_id: uuid.UUID) -> EstadoProcesoResponse:
         estudiante = self.repo.obtener_estudiante(estudiante_id)

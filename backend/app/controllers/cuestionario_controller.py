@@ -1,16 +1,21 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import obtener_estudiante_id_actual, requerir_estudiante_autorizado
-from app.core.exceptions import AreaAcademicaInvalidaError, InstrumentoNoDisponibleError
+from app.core.exceptions import (
+    AreaAcademicaInvalidaError,
+    InstrumentoNoDisponibleError,
+    PdfIcfesNoReconocidoError,
+)
 from app.db.session import get_db
 from app.schemas.cuestionario import (
     DatosAcademicosRequest,
     DatosSociodemograficosRequest,
     DatosSocioeconomicosRequest,
     EstadoProcesoResponse,
+    ExtraccionIcfesResponse,
     InstrumentoActivoResponse,
     MisRespuestasResponse,
     PasoGuardadoResponse,
@@ -21,6 +26,36 @@ from app.services.cuestionario_service import CuestionarioService
 
 cuestionario_router = APIRouter(prefix="/cuestionario", tags=["Cuestionarios"])
 instrumentos_router = APIRouter(prefix="/instrumentos", tags=["Cuestionarios"])
+
+TAMANO_MAXIMO_PDF = 5 * 1024 * 1024  # 5 MB
+
+
+@cuestionario_router.post("/academico/extraer-pdf", response_model=ExtraccionIcfesResponse)
+async def extraer_academico_de_pdf(
+    archivo: UploadFile = File(...),
+    _estudiante_id: uuid.UUID = Depends(obtener_estudiante_id_actual),
+    db: Session = Depends(get_db),
+):
+    if archivo.content_type != "application/pdf":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El archivo debe ser un PDF.")
+
+    contenido = await archivo.read()
+    if len(contenido) > TAMANO_MAXIMO_PDF:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El PDF es demasiado grande (máximo 5 MB).",
+        )
+
+    try:
+        return CuestionarioService(db).extraer_academico_de_pdf(contenido)
+    except PdfIcfesNoReconocidoError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                "No pudimos leer este PDF automáticamente. Verifica que sea el reporte "
+                "oficial de resultados del ICFES, o completa los datos a mano."
+            ),
+        )
 
 
 @cuestionario_router.put("/academico", response_model=PasoGuardadoResponse)

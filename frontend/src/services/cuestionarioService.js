@@ -31,3 +31,11 @@ export function obtenerMiEstado() {
 export function obtenerMisRespuestas() {
   return api.get("/cuestionario/mis-respuestas").then((res) => res.data);
 }
+
+export function extraerAcademicoDePdf(archivo) {
+  const formData = new FormData();
+  formData.append("archivo", archivo);
+  return api
+    .post("/cuestionario/academico/extraer-pdf", formData)
+    .then((res) => res.data);
+}

@@ -1,4 +1,9 @@
+import { useRef, useState } from "react";
+import Alert from "../../components/Alert";
+import Button from "../../components/Button";
 import Field, { inputClasses } from "../../components/Field";
+import { mensajeDeError } from "../../services/api";
+import { extraerAcademicoDePdf } from "../../services/cuestionarioService";
 
 export const AREAS_ACADEMICAS = [
   "Lectura crítica",
@@ -21,6 +26,75 @@ export function calcularPuntajeGlobalIcfes(valores) {
   const [lc, mat, soc, cn, ing] = notas;
   const indiceGlobal = (3 * lc + 3 * mat + 3 * soc + 3 * cn + 1 * ing) / 13;
   return Math.round(indiceGlobal * 5);
+}
+
+function SubirPdfIcfes({ onExtraido }) {
+  const inputRef = useRef(null);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState("");
+  const [listo, setListo] = useState(false);
+
+  async function manejarArchivo(e) {
+    const archivo = e.target.files?.[0];
+    e.target.value = "";
+    if (!archivo) return;
+
+    setError("");
+    setListo(false);
+    setCargando(true);
+    try {
+      const resultado = await extraerAcademicoDePdf(archivo);
+      resultado.notas.forEach((n) => onExtraido(n.area, String(n.nota)));
+      onExtraido("desempeno_ingles", resultado.desempeno_ingles);
+      setListo(true);
+    } catch (err) {
+      setError(mensajeDeError(err));
+    } finally {
+      setCargando(false);
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-dashed border-teal/40 bg-teal/5 px-3 py-3">
+      <p className="text-sm font-medium text-navy">
+        ¿Tienes el PDF de tu reporte oficial del ICFES?
+      </p>
+      <p className="mt-0.5 text-xs text-navy/60">
+        Lo subes y llenamos las 5 materias y el nivel de inglés por ti. Igual
+        podrás revisar y corregir los datos antes de guardar.
+      </p>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf"
+        className="hidden"
+        onChange={manejarArchivo}
+      />
+      <Button
+        type="button"
+        variant="secondary"
+        className="mt-2.5"
+        disabled={cargando}
+        onClick={() => inputRef.current?.click()}
+      >
+        {cargando ? "Leyendo tu PDF..." : "Subir mi PDF del ICFES"}
+      </Button>
+
+      {error && (
+        <div className="mt-2.5">
+          <Alert tipo="error">{error}</Alert>
+        </div>
+      )}
+      {listo && !error && (
+        <div className="mt-2.5">
+          <Alert tipo="exito">
+            Listo, revisa los campos de abajo y corrígelos si hace falta antes de guardar.
+          </Alert>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function PasoAcademico({ valores, errores = {}, onChange }) {
@@ -48,6 +122,8 @@ export default function PasoAcademico({ valores, errores = {}, onChange }) {
           pre-ICFES mientras tanto.
         </span>
       </label>
+
+      {!esSimulacro && <SubirPdfIcfes onExtraido={onChange} />}
 
       {AREAS_ACADEMICAS.map((area) => (
         <Field key={area} label={`${area} (0-100)`} id={`nota-${area}`} error={errores[area]}>
