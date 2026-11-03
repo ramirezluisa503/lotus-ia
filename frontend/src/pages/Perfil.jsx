@@ -474,7 +474,8 @@ function SeccionRespuestas() {
               <FilaDato etiqueta="Personas en el hogar" valor={datos.personas_hogar} />
               <FilaDato etiqueta="Educación de la madre" valor={datos.educacion_madre} />
               <FilaDato etiqueta="Educación del padre" valor={datos.educacion_padre} />
-              <FilaDato etiqueta="Ocupación en el hogar" valor={datos.ocupacion_hogar} />
+              <FilaDato etiqueta="Ocupación de la madre" valor={datos.ocupacion_madre} />
+              <FilaDato etiqueta="Ocupación del padre" valor={datos.ocupacion_padre} />
               <FilaDato etiqueta="Internet" valor={datos.tiene_internet === null ? null : datos.tiene_internet ? "Sí" : "No"} />
               <FilaDato etiqueta="Computador" valor={datos.tiene_computador === null ? null : datos.tiene_computador ? "Sí" : "No"} />
               <FilaDato etiqueta="Lavadora" valor={datos.tiene_lavadora === null ? null : datos.tiene_lavadora ? "Sí" : "No"} />

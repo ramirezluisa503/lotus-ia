@@ -57,7 +57,8 @@ class DatosSocioeconomicosRequest(BaseModel):
     personas_hogar: int | None = Field(default=None, ge=1, le=20)
     educacion_madre: NivelEducativo | None = None
     educacion_padre: NivelEducativo | None = None
-    ocupacion_hogar: str | None = None
+    ocupacion_madre: str | None = None
+    ocupacion_padre: str | None = None
     tiene_internet: bool | None = None
     tiene_computador: bool | None = None
     tiene_lavadora: bool | None = None
@@ -130,7 +131,8 @@ class MisRespuestasResponse(BaseModel):
     personas_hogar: int | None
     educacion_madre: str | None
     educacion_padre: str | None
-    ocupacion_hogar: str | None
+    ocupacion_madre: str | None
+    ocupacion_padre: str | None
     tiene_internet: bool | None
     tiene_computador: bool | None
     tiene_lavadora: bool | None

@@ -51,7 +51,7 @@ class CuestionarioRepository:
         if existente:
             for campo in (
                 "estrato", "rango_ingresos", "personas_hogar", "educacion_madre",
-                "educacion_padre", "ocupacion_hogar", "tiene_internet",
+                "educacion_padre", "ocupacion_madre", "ocupacion_padre", "tiene_internet",
                 "tiene_computador", "tiene_lavadora", "tiene_automovil",
                 "recibe_apoyo_estatal", "trabaja",
             ):

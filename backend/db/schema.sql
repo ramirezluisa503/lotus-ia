@@ -145,7 +145,8 @@ CREATE TABLE app.datos_socioeconomicos (
   personas_hogar         SMALLINT CHECK (personas_hogar BETWEEN 1 AND 20),
   educacion_madre        VARCHAR(50), -- etiquetas largas, ver backend/ml/README.md
   educacion_padre        VARCHAR(50),
-  ocupacion_hogar        VARCHAR(40),
+  ocupacion_madre        VARCHAR(40),
+  ocupacion_padre        VARCHAR(40),
   tiene_internet         BOOLEAN,
   tiene_computador       BOOLEAN,
   tiene_lavadora         BOOLEAN, -- requerido por el modelo de IA

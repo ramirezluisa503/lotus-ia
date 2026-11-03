@@ -119,12 +119,23 @@ export default function PasoSocioeconomico({ valores, errores = {}, onChange }) 
         </select>
       </Field>
 
-      <Field label="Ocupación principal en tu hogar (opcional)" id="ocupacion_hogar">
+      <Field label="Ocupación de tu madre (opcional)" id="ocupacion_madre">
         <input
-          id="ocupacion_hogar"
+          id="ocupacion_madre"
           type="text"
-          value={valores.ocupacion_hogar ?? ""}
-          onChange={(e) => onChange("ocupacion_hogar", e.target.value)}
+          value={valores.ocupacion_madre ?? ""}
+          onChange={(e) => onChange("ocupacion_madre", e.target.value)}
+          className={inputClasses(false)}
+          placeholder="Ej. Comerciante, empleada, independiente..."
+        />
+      </Field>
+
+      <Field label="Ocupación de tu padre (opcional)" id="ocupacion_padre">
+        <input
+          id="ocupacion_padre"
+          type="text"
+          value={valores.ocupacion_padre ?? ""}
+          onChange={(e) => onChange("ocupacion_padre", e.target.value)}
           className={inputClasses(false)}
           placeholder="Ej. Comerciante, empleado, independiente..."
         />
