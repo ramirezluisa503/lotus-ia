@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Button from "./Button";
 import Logo from "./Logo";
@@ -20,6 +20,14 @@ export default function Navbar() {
         <nav className="flex items-center gap-2 sm:gap-3">
           {usuario ? (
             <>
+              {(usuario.rol === "ESTUDIANTE" || usuario.rol === "ACUDIENTE") && (
+                <Link
+                  to="/perfil"
+                  className="hidden text-sm font-medium text-navy/70 hover:text-teal sm:inline"
+                >
+                  Mi perfil
+                </Link>
+              )}
               <Notificaciones />
               <span className="hidden text-sm text-navy/60 sm:inline">
                 {usuario.correo}

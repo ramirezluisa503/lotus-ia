@@ -110,9 +110,6 @@ function PanelAcudiente({ usuario }) {
                   {yaAutorizo ? "Revisar mi autorización" : "Autorizar participación"}
                   <IconArrowRight className="h-4 w-4" />
                 </Button>
-                <Button as={Link} to="/perfil" variant="secondary" size="lg">
-                  Ver mi perfil
-                </Button>
                 <Button as="a" href="#como-funciona" variant="ghost" size="lg">
                   ¿Cómo funciona?
                 </Button>
@@ -304,12 +301,6 @@ export default function Panel() {
               </dd>
             </div>
           </dl>
-
-          {usuario?.rol === "ESTUDIANTE" && (
-            <Button as={Link} to="/perfil" variant="secondary" className="mt-4 w-full">
-              Ver mi perfil
-            </Button>
-          )}
 
           {usuario?.rol === "ESTUDIANTE" && (
             <div className="mt-4 rounded-xl border border-navy/10 p-4">
