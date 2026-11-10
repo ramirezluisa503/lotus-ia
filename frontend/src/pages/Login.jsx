@@ -50,7 +50,7 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-ice px-6">
+    <div className="fondo-aguamarina flex min-h-screen items-center justify-center px-6">
       <div className="w-full max-w-sm rounded-3xl border border-navy/5 bg-white p-8 shadow-xl shadow-teal/10">
         <div className="flex justify-center">
           <Logo />

@@ -12,6 +12,20 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Fondo de las pantallas de registro e inicio de sesión: degradado suave de
+   izquierda a derecha, de verde menta a teal claro, pasando por blanco. */
+.fondo-aguamarina {
+  background: linear-gradient(90deg, #86e0a4 0%, #c8f2d6 32%, #f4fbf8 50%, #c3e4e9 68%, #5fa9b7 100%);
+}
+
+/* Desplazamiento suave al hacer clic en enlaces internos (p. ej. "Cómo funciona"),
+   salvo que la persona haya pedido reducir animaciones en su sistema. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--color-ice);

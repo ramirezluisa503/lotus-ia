@@ -142,7 +142,7 @@ export default function Registro() {
 
   if (registroExitoso) {
     return (
-      <div className="flex min-h-svh items-center justify-center bg-ice p-4">
+      <div className="fondo-aguamarina flex min-h-svh items-center justify-center p-4">
         <div className="w-full max-w-sm rounded-3xl border border-navy/5 bg-white p-8 text-center shadow-xl shadow-teal/10">
           <div className="flex justify-center">
             <Logo />
@@ -163,7 +163,7 @@ export default function Registro() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-ice p-4">
+    <div className="fondo-aguamarina flex min-h-svh items-center justify-center p-4">
       <div className="w-full max-w-2xl rounded-3xl border border-navy/5 bg-white px-6 py-6 shadow-xl shadow-teal/10 sm:px-10">
         <div className="flex justify-center">
           <Logo />

@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconBell } from "./icons";
+import { useAuth } from "../context/AuthContext";
+import {
+  obtenerEstadoAutorizacion,
+  obtenerEstudiantesACargo,
+} from "../services/consentimientoService";
 import {
   marcarNotificacionLeida,
   marcarTodasLeidas,
@@ -8,6 +13,40 @@ import {
 } from "../services/notificacionService";
 
 const INTERVALO_SONDEO_MS = 45000;
+
+// Aviso fijo de autorización pendiente. No se guarda en la base de datos: se
+// calcula cada vez a partir del estado real, así que desaparece solo cuando
+// la autorización queda completa.
+async function consultarPendiente(rol) {
+  if (rol === "ESTUDIANTE") {
+    const estado = await obtenerEstadoAutorizacion();
+    if (estado.puede_continuar) return null;
+    const faltaAcudiente = !estado.consentimiento_otorgado;
+    const faltaTuya = !estado.asentimiento_otorgado;
+    return {
+      titulo: "Completa tu autorización para empezar",
+      detalle:
+        faltaAcudiente && faltaTuya
+          ? "Falta la autorización de tu acudiente y tu aceptación."
+          : faltaAcudiente
+            ? "Falta la autorización de tu acudiente."
+            : "Falta tu aceptación para participar.",
+    };
+  }
+  if (rol === "ACUDIENTE") {
+    const estudiantes = await obtenerEstudiantesACargo();
+    const pendientes = estudiantes.filter((e) => !e.consentimiento_otorgado).length;
+    if (pendientes === 0) return null;
+    return {
+      titulo: "Tienes una autorización pendiente",
+      detalle:
+        pendientes === 1
+          ? "Un estudiante a tu cargo espera tu autorización para empezar."
+          : `${pendientes} estudiantes a tu cargo esperan tu autorización.`,
+    };
+  }
+  return null;
+}
 
 function tiempoRelativo(fechaIso) {
   const segundos = Math.max(0, (Date.now() - new Date(fechaIso).getTime()) / 1000);
@@ -20,14 +59,21 @@ function tiempoRelativo(fechaIso) {
   return `hace ${dias} d`;
 }
 
-export default function Notificaciones() {
+// claro: íconos blancos, para cuando la barra va encima de una foto oscura.
+export default function Notificaciones({ claro = false }) {
   const [notificaciones, setNotificaciones] = useState([]);
   const [noLeidas, setNoLeidas] = useState(0);
   const [abierto, setAbierto] = useState(false);
   const contenedorRef = useRef(null);
   const navigate = useNavigate();
+  const { usuario } = useAuth();
+  const rol = usuario?.rol;
+  const [pendiente, setPendiente] = useState(null);
 
   function cargar() {
+    consultarPendiente(rol)
+      .then(setPendiente)
+      .catch(() => setPendiente(null));
     obtenerNotificaciones()
       .then((data) => {
         setNotificaciones(data.notificaciones);
@@ -40,7 +86,8 @@ export default function Notificaciones() {
     cargar();
     const intervalo = setInterval(cargar, INTERVALO_SONDEO_MS);
     return () => clearInterval(intervalo);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rol]);
 
   useEffect(() => {
     function alHacerClicFuera(e) {
@@ -75,20 +122,22 @@ export default function Notificaciones() {
       <button
         type="button"
         onClick={() => setAbierto((v) => !v)}
-        className="relative flex h-10 w-10 items-center justify-center rounded-lg text-navy/60 transition-colors hover:bg-navy/5 hover:text-navy"
+        className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+          claro ? "text-white/85 hover:bg-white/15 hover:text-white" : "text-navy/60 hover:bg-navy/5 hover:text-navy"
+        }`}
         aria-label="Notificaciones"
       >
         <IconBell className="h-5 w-5" />
-        {noLeidas > 0 && (
+        {noLeidas + (pendiente ? 1 : 0) > 0 && (
           <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-semibold text-white">
-            {noLeidas > 9 ? "9+" : noLeidas}
+            {noLeidas + (pendiente ? 1 : 0) > 9 ? "9+" : noLeidas + (pendiente ? 1 : 0)}
           </span>
         )}
       </button>
 
       {abierto && (
-        <div className="absolute right-0 z-30 mt-2 w-80 overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-xl shadow-teal/10">
-          <div className="flex items-center justify-between border-b border-navy/5 px-4 py-3">
+        <div className="fixed inset-x-4 top-18 z-30 flex flex-col overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-xl shadow-teal/10 sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96">
+          <div className="flex shrink-0 items-center justify-between border-b border-navy/5 px-4 py-3">
             <p className="text-sm font-semibold text-navy">Notificaciones</p>
             {noLeidas > 0 && (
               <button
@@ -101,8 +150,25 @@ export default function Notificaciones() {
             )}
           </div>
 
-          <div className="max-h-96 overflow-y-auto">
-            {notificaciones.length === 0 ? (
+          {/* Alto máximo según la pantalla, para que nada quede por fuera */}
+          <div className="max-h-[calc(100svh-9rem)] overflow-y-auto">
+            {pendiente && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAbierto(false);
+                  navigate("/autorizacion");
+                }}
+                className="relative block w-full border-b border-navy/5 bg-linear-to-r from-mint/30 to-cyan-light/30 px-4 py-3 pl-5 text-left text-sm transition-colors hover:from-mint/45 hover:to-cyan-light/45"
+              >
+                <span className="absolute inset-y-0 left-0 w-1 bg-linear-to-b from-mint to-teal" />
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-teal">Pendiente</p>
+                <p className="mt-0.5 font-semibold text-navy">{pendiente.titulo}</p>
+                <p className="mt-0.5 text-xs text-navy/60">{pendiente.detalle}</p>
+                <p className="mt-1.5 text-xs font-medium text-teal">Completar ahora →</p>
+              </button>
+            )}
+            {notificaciones.length === 0 && !pendiente ? (
               <p className="px-4 py-6 text-center text-sm text-navy/50">
                 No tienes notificaciones todavía.
               </p>

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import Footer from "../components/Footer";
-import Logo from "../components/Logo";
-import { IconArrowRight, IconShield } from "../components/icons";
+import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
+import { IconArrowRight, IconShield } from "../components/icons";
 
 // Devuelve un número de -1 (la sección apenas entra por abajo de la
 // pantalla) a 1 (ya salió por arriba). Las tarjetas lo usan para moverse
@@ -45,50 +45,6 @@ function useProgresoScroll(ref) {
   }, [ref]);
 
   return progreso;
-}
-
-function EncabezadoPortada() {
-  const { usuario } = useAuth();
-  const destinoPanel = usuario?.rol === "ADMINISTRADOR" ? "/admin" : "/panel";
-
-  return (
-    <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
-      <Logo variante="claro" />
-      <nav className="flex items-center gap-2">
-        {usuario ? (
-          <Link
-            to={destinoPanel}
-            className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-navy shadow-sm transition-colors hover:bg-mint"
-          >
-            Ir a mi panel
-          </Link>
-        ) : (
-          <>
-            <div className="hidden items-center gap-1 rounded-full bg-white/95 p-1.5 shadow-sm sm:flex">
-              <a href="#como-funciona" className="rounded-full px-4 py-1.5 text-sm text-navy transition-colors hover:bg-ice">
-                Cómo funciona
-              </a>
-              <Link to="/login" className="rounded-full px-4 py-1.5 text-sm text-navy transition-colors hover:bg-ice">
-                Iniciar sesión
-              </Link>
-            </div>
-            <Link
-              to="/login"
-              className="rounded-full bg-white/95 px-4 py-2.5 text-sm font-medium text-navy shadow-sm sm:hidden"
-            >
-              Entrar
-            </Link>
-            <Link
-              to="/registro"
-              className="rounded-full bg-mint px-5 py-2.5 text-sm font-medium text-navy shadow-sm transition-colors hover:bg-white"
-            >
-              Registrarme
-            </Link>
-          </>
-        )}
-      </nav>
-    </header>
-  );
 }
 
 // `desfase`: cuánto y hacia dónde se mueve cada tarjeta al bajar (en px).
@@ -165,9 +121,18 @@ const STEPS = [
 export default function Home() {
   const seccionEvaluaRef = useRef(null);
   const progresoEvalua = useProgresoScroll(seccionEvaluaRef);
+  const { usuario } = useAuth();
+
+  // La página de inicio es solo para quien no ha iniciado sesión: si ya
+  // entró, lo mandamos directo a su panel.
+  if (usuario) {
+    return <Navigate to={usuario.rol === "ADMINISTRADOR" ? "/admin" : "/panel"} replace />;
+  }
 
   return (
     <div className="min-h-screen bg-ice">
+      <Navbar />
+
       {/* Portada: foto a pantalla completa con el slogan encima */}
       <section className="relative flex min-h-svh flex-col overflow-hidden bg-navy">
         <img
@@ -179,11 +144,9 @@ export default function Home() {
         <div className="absolute inset-0 bg-linear-to-r from-navy/85 via-navy/45 to-navy/10" />
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-navy/60 to-transparent" />
 
-        <EncabezadoPortada />
-
-        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 pb-12 pt-4">
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 pb-12 pt-10">
           <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
               <span className="block">Entiende tu entorno,</span>
               <span className="block text-mint">descubre tus posibilidades.</span>
             </h1>
@@ -242,7 +205,7 @@ export default function Home() {
       </section>
 
       {/* Cómo funciona */}
-      <section id="como-funciona" className="bg-white py-16">
+      <section id="como-funciona" className="scroll-mt-20 bg-white py-16">
         <div className="mx-auto max-w-6xl px-6">
           <h2 className="text-center text-2xl font-semibold text-navy sm:text-3xl">
             Cómo funciona
@@ -251,9 +214,12 @@ export default function Home() {
           <div className="relative mt-12 grid gap-8 sm:grid-cols-3">
             <div className="absolute left-0 right-0 top-5 hidden h-px bg-navy/10 sm:block" />
             {STEPS.map((step, index) => (
-              <div key={step.title} className="relative text-center">
-                <span className="relative z-10 mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-teal to-navy text-sm font-semibold text-white shadow-md shadow-teal/30">
-                  {index + 1}
+              <div key={step.title} className="group relative text-center">
+                {/* Un degradado no se puede animar directamente: se encima una capa
+                    menta que aparece suave (opacidad) al pasar el mouse por el paso. */}
+                <span className="relative z-10 mx-auto flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-linear-to-br from-teal to-navy text-sm font-semibold text-white shadow-md shadow-teal/30 transition-[color,box-shadow] duration-500 group-hover:text-navy group-hover:shadow-mint/60">
+                  <span className="absolute inset-0 bg-mint opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <span className="relative">{index + 1}</span>
                 </span>
                 <h3 className="mt-4 font-semibold text-navy">{step.title}</h3>
                 <p className="mx-auto mt-1.5 max-w-xs text-sm text-navy/65">

@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 
 // variante="claro" para usarlo sobre fondos oscuros o fotos (p. ej. la portada).
 export default function Logo({ className = "", variante = "oscuro" }) {
+  // Sin sesión lleva a la página de inicio; con sesión, al panel de cada rol.
   const { usuario } = useAuth();
   const destino = !usuario ? "/" : usuario.rol === "ADMINISTRADOR" ? "/admin" : "/panel";
 
