@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Alert from "../components/Alert";
 import Button from "../components/Button";
+import HistoriasResultado from "../components/HistoriasResultado";
 import Navbar from "../components/Navbar";
 import { IconHeart, IconShield, IconSparkles } from "../components/icons";
 import { mensajeDeError } from "../services/api";
-import { obtenerPerfilPsicometrico } from "../services/cuestionarioService";
+import { useAuth } from "../context/AuthContext";
+import { obtenerMisRespuestas, obtenerPerfilPsicometrico } from "../services/cuestionarioService";
+import { listarBecas, listarCarreras } from "../services/ofertaService";
 import { calificarRecomendacion } from "../services/encuestaService";
 import { obtenerHistorialRecomendaciones } from "../services/recomendacionService";
 
@@ -129,23 +132,52 @@ export default function Resultado() {
   const [perfil, setPerfil] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const { usuario } = useAuth();
+
+  // Datos extra para contar el resultado como historias.
+  const [respuestas, setRespuestas] = useState(null);
+  const [carreras, setCarreras] = useState([]);
+  const [becas, setBecas] = useState([]);
+  const [verHistorias, setVerHistorias] = useState(true);
 
   useEffect(() => {
     Promise.all([
       obtenerHistorialRecomendaciones().then((lista) => lista[0] ?? null),
       obtenerPerfilPsicometrico().catch(() => ({ dimensiones: [] })),
+      obtenerMisRespuestas().catch(() => null),
+      listarCarreras().catch(() => []),
     ])
-      .then(([primeraRecomendacion, perfilPsicometrico]) => {
+      .then(([primeraRecomendacion, perfilPsicometrico, misRespuestas, listaCarreras]) => {
         setRecomendacion(primeraRecomendacion);
         setPerfil(perfilPsicometrico.dimensiones);
+        setRespuestas(misRespuestas);
+        setCarreras(listaCarreras);
+        if (primeraRecomendacion) {
+          listarBecas({ area: primeraRecomendacion.area })
+            .then(setBecas)
+            .catch(() => setBecas([]));
+        }
       })
       .catch((err) => setError(mensajeDeError(err)))
       .finally(() => setCargando(false));
   }, []);
 
+  const nombre = (usuario?.nombre || "").trim().split(/\s+/)[0];
+
   return (
     <div className="min-h-screen bg-ice">
       <Navbar />
+      {!cargando && recomendacion && verHistorias && (
+        <HistoriasResultado
+          recomendacion={recomendacion}
+          dimensiones={perfil}
+          respuestas={respuestas}
+          carreras={carreras}
+          becas={becas}
+          nombre={nombre}
+          onCerrar={() => setVerHistorias(false)}
+        />
+      )}
       <main className="mx-auto max-w-xl px-6 py-12">
         <div className="rounded-3xl border border-navy/5 bg-white p-8 shadow-xl shadow-teal/10">
           {cargando && <p className="text-sm text-navy/60">Cargando tu resultado...</p>}
@@ -194,6 +226,15 @@ export default function Resultado() {
               )}
 
               <p className="mt-4 text-sm text-navy/70">{recomendacion.explicacion}</p>
+
+              <button
+                type="button"
+                onClick={() => setVerHistorias(true)}
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-ice px-4 py-2 text-sm font-medium text-teal transition-colors hover:bg-mint/50"
+              >
+                <IconSparkles className="h-4 w-4" />
+                Ver mi resultado paso a paso
+              </button>
 
               <PerfilPsicometrico dimensiones={perfil} />
 

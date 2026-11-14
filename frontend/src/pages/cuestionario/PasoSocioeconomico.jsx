@@ -16,7 +16,7 @@ const NIVELES_EDUCATIVOS = [
 
 function CampoSiNo({ etiqueta, valor, onChange }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-navy/15 px-3.5 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-navy/15 px-3.5 py-1.5">
       <span className="text-sm text-navy">{etiqueta}</span>
       <div className="flex gap-2">
         {[
@@ -41,11 +41,14 @@ function CampoSiNo({ etiqueta, valor, onChange }) {
 
 export default function PasoSocioeconomico({ valores, errores = {}, onChange }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <p className="text-sm text-navy/60">
         Esta información nos ayuda a que la recomendación sea realista para tu
         situación. Puedes dejar en blanco lo que prefieras no responder.
       </p>
+
+      {/* items-end: si una etiqueta ocupa dos renglones, las cajas igual quedan alineadas */}
+      <div className="grid items-end gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
 
       <Field label="Estrato (opcional)" id="estrato" error={errores.estrato}>
         <input
@@ -59,6 +62,19 @@ export default function PasoSocioeconomico({ valores, errores = {}, onChange }) 
         />
       </Field>
 
+      <Field label="Personas en tu hogar (opcional)" id="personas_hogar" error={errores.personas_hogar}>
+        <input
+          id="personas_hogar"
+          type="number"
+          min={1}
+          max={20}
+          value={valores.personas_hogar ?? ""}
+          onChange={(e) => onChange("personas_hogar", e.target.value)}
+          className={inputClasses(Boolean(errores.personas_hogar))}
+        />
+      </Field>
+
+      <div className="lg:col-span-2">
       <Field label="Ingresos del hogar, en salarios mínimos (opcional)" id="rango_ingresos">
         <select
           id="rango_ingresos"
@@ -74,19 +90,9 @@ export default function PasoSocioeconomico({ valores, errores = {}, onChange }) 
           <option value=">5">Más de 5</option>
         </select>
       </Field>
+      </div>
 
-      <Field label="Personas en tu hogar (opcional)" id="personas_hogar" error={errores.personas_hogar}>
-        <input
-          id="personas_hogar"
-          type="number"
-          min={1}
-          max={20}
-          value={valores.personas_hogar ?? ""}
-          onChange={(e) => onChange("personas_hogar", e.target.value)}
-          className={inputClasses(Boolean(errores.personas_hogar))}
-        />
-      </Field>
-
+      <div className="lg:col-span-2">
       <Field label="Educación de tu madre (opcional)" id="educacion_madre">
         <select
           id="educacion_madre"
@@ -102,7 +108,9 @@ export default function PasoSocioeconomico({ valores, errores = {}, onChange }) 
           ))}
         </select>
       </Field>
+      </div>
 
+      <div className="lg:col-span-2">
       <Field label="Educación de tu padre (opcional)" id="educacion_padre">
         <select
           id="educacion_padre"
@@ -118,7 +126,9 @@ export default function PasoSocioeconomico({ valores, errores = {}, onChange }) 
           ))}
         </select>
       </Field>
+      </div>
 
+      <div className="lg:col-span-2">
       <Field label="Ocupación de tu madre (opcional)" id="ocupacion_madre">
         <input
           id="ocupacion_madre"
@@ -129,7 +139,9 @@ export default function PasoSocioeconomico({ valores, errores = {}, onChange }) 
           placeholder="Ej. Comerciante, empleada, independiente..."
         />
       </Field>
+      </div>
 
+      <div className="lg:col-span-2">
       <Field label="Ocupación de tu padre (opcional)" id="ocupacion_padre">
         <input
           id="ocupacion_padre"
@@ -140,8 +152,11 @@ export default function PasoSocioeconomico({ valores, errores = {}, onChange }) 
           placeholder="Ej. Comerciante, empleado, independiente..."
         />
       </Field>
+      </div>
 
-      <div className="space-y-2">
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <CampoSiNo
           etiqueta="¿Tienes internet en casa?"
           valor={valores.tiene_internet}

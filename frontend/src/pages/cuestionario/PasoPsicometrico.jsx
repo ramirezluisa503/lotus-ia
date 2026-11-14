@@ -6,24 +6,26 @@ const ESCALA = [
   { valor: 5, etiqueta: "Mucho" },
 ];
 
-export default function PasoPsicometrico({ preguntas, respuestas, onChange, cargando }) {
+// `desde`: número de la primera pregunta mostrada (el test se ve por partes).
+export default function PasoPsicometrico({ preguntas, respuestas, onChange, cargando, desde = 0 }) {
   if (cargando) {
     return <p className="text-sm text-navy/60">Cargando preguntas...</p>;
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <p className="text-sm text-navy/60">
         No hay respuestas correctas o incorrectas: responde qué tanto se
         parece cada frase a ti.
       </p>
 
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {preguntas.map((p, index) => (
-        <div key={p.id} className="rounded-xl border border-navy/10 p-4">
+        <div key={p.id} className="flex flex-col justify-between rounded-xl border border-navy/10 p-3.5">
           <p className="text-sm font-medium text-navy">
-            {index + 1}. {p.enunciado}
+            {desde + index + 1}. {p.enunciado}
           </p>
-          <div className="mt-3 grid grid-cols-5 gap-1.5">
+          <div className="mt-2.5 grid grid-cols-5 gap-1">
             {ESCALA.map((opcion) => (
               <button
                 key={opcion.valor}
@@ -41,6 +43,7 @@ export default function PasoPsicometrico({ preguntas, respuestas, onChange, carg
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }

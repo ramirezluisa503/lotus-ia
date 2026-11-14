@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey, Numeric, SmallInteger, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -24,6 +24,9 @@ class Recomendacion(Base):
     nivel_formacion: Mapped[str] = mapped_column(String(19), nullable=False)
     probabilidad: Mapped[float | None] = mapped_column(Numeric(5, 4), nullable=True)
     explicacion: Mapped[str] = mapped_column(Text, nullable=False)
+    # Las mismas razones de `explicacion`, pero como lista (para mostrarlas
+    # como tarjetas). Puede ser NULL en recomendaciones generadas antes.
+    razones: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     generada_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     area: Mapped[AreaConocimiento] = relationship(AreaConocimiento, lazy="joined")

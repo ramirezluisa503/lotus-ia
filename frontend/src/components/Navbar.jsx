@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Logo from "./Logo";
 import Notificaciones from "./Notificaciones";
@@ -83,34 +83,6 @@ export default function Navbar() {
     navigate("/");
   }
 
-  const enlacesVisitante = [
-    { etiqueta: "Inicio", to: "/", exacto: true },
-    { etiqueta: "Cómo funciona", href: "/#como-funciona" },
-    { etiqueta: "Iniciar sesión", to: "/login" },
-  ];
-
-  function claseEnlace({ isActive }) {
-    return `whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-      isActive ? "bg-teal text-white" : "text-navy/75 hover:bg-white hover:text-navy"
-    }`;
-  }
-
-  const grupoEnlaces = (
-    <div className="flex items-center gap-1 rounded-full bg-ice/80 p-1.5">
-      {enlacesVisitante.map((e) =>
-        e.href ? (
-          <a key={e.etiqueta} href={e.href} className={claseEnlace({ isActive: false })}>
-            {e.etiqueta}
-          </a>
-        ) : (
-          <NavLink key={e.etiqueta} to={e.to} end={e.exacto} className={claseEnlace}>
-            {e.etiqueta}
-          </NavLink>
-        )
-      )}
-    </div>
-  );
-
   return (
     <header className="sticky top-0 z-30 border-b border-navy/5 bg-white/90 shadow-sm shadow-navy/5 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3.5">
@@ -122,24 +94,23 @@ export default function Navbar() {
             <MenuPerfil usuario={usuario} alCerrarSesion={cerrarSesion} />
           </div>
         ) : (
-          <>
-            <nav className="hidden md:block">{grupoEnlaces}</nav>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/login"
+              className="rounded-full px-4 py-2.5 text-sm font-medium text-navy transition-colors hover:bg-ice"
+            >
+              Iniciar sesión
+            </Link>
             <Link
               to="/registro"
               className="rounded-full bg-mint px-5 py-2.5 text-sm font-medium text-navy shadow-sm transition-colors hover:bg-teal hover:text-white"
             >
               Registrarme
             </Link>
-          </>
+          </div>
         )}
       </div>
 
-      {/* Visitantes en celular: los enlaces van en una segunda fila deslizable */}
-      {!usuario && (
-        <nav className="overflow-x-auto px-6 pb-3 md:hidden">
-          <div className="w-max">{grupoEnlaces}</div>
-        </nav>
-      )}
     </header>
   );
 }

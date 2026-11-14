@@ -20,6 +20,18 @@ export function AuthProvider({ children }) {
       .finally(() => setCargando(false));
   }, []);
 
+  // Todas las pestañas del navegador comparten la misma sesión guardada. Si en
+  // otra pestaña se inicia o se cierra sesión (por ejemplo con otra cuenta),
+  // recargamos esta para que no quede mostrando a una persona mientras habla
+  // con el servidor como otra.
+  useEffect(() => {
+    function alCambiarSesionEnOtraPestana(e) {
+      if (e.key === TOKEN_KEY) window.location.reload();
+    }
+    window.addEventListener("storage", alCambiarSesionEnOtraPestana);
+    return () => window.removeEventListener("storage", alCambiarSesionEnOtraPestana);
+  }, []);
+
   async function login({ correo, contrasena }) {
     const data = await iniciarSesion({ correo, contrasena });
     localStorage.setItem(TOKEN_KEY, data.access_token);

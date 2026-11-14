@@ -103,6 +103,7 @@ class RecomendacionService:
             nivel_formacion=r.nivel_formacion,
             probabilidad=float(r.probabilidad) if r.probabilidad is not None else None,
             explicacion=r.explicacion,
+            razones=r.razones or [],
             generada_en=r.generada_en,
             ya_calificada=self.repo.tiene_encuesta(r.id),
         )
@@ -136,6 +137,7 @@ class RecomendacionService:
             nivel_formacion=prediccion.nivel_formacion,
             probabilidad=prediccion.probabilidad,
             explicacion=explicacion,
+            razones=[dict(x) for x in prediccion.razones],
         )
         guardada = self.repo.guardar(recomendacion)
 

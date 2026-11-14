@@ -18,7 +18,7 @@ const JORNADAS = [
 
 export default function PasoSociodemografico({ valores, errores = {}, onChange }) {
   return (
-    <div className="space-y-4">
+    <div className="grid items-end gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
       <Field label="¿Cuántos años tienes?" id="edad" error={errores.edad}>
         <input
           id="edad"

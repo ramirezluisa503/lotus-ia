@@ -217,10 +217,12 @@ export default function Autorizacion() {
   const { usuario } = useAuth();
 
   return (
-    <div className="min-h-screen bg-ice">
+    // La página ocupa justo el alto de la pantalla: la barra arriba y la
+    // tarjeta centrada en el espacio que queda, sin scroll.
+    <div className="fondo-aguamarina flex min-h-svh flex-col">
       <Navbar />
-      <main className="mx-auto max-w-lg px-6 py-16">
-        <div className="rounded-3xl border border-navy/5 bg-white p-8 shadow-xl shadow-teal/10">
+      <main className="mx-auto flex w-full max-w-lg flex-1 items-center px-6 py-6">
+        <div className="w-full rounded-3xl border border-navy/5 bg-white p-7 shadow-xl shadow-teal/10">
           <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-mint/40 text-teal">
             {usuario?.rol === "ACUDIENTE" ? (
               <IconHeart className="h-5.5 w-5.5" />

@@ -130,11 +130,36 @@ def _valor_original(nombre_columna: str, valor_escalado: float) -> float:
     return valor_escalado * (maximo - minimo) + minimo
 
 
-def _generar_explicacion(X: pd.DataFrame, max_condiciones: int = 3) -> str:
-    """Recorre decision_path del árbol (REQF012) y arma una frase en
-    lenguaje sencillo con las condiciones más relevantes para este
-    estudiante, priorizando los puntajes ICFES y el contexto socioeconómico
-    por encima de variables administrativas del colegio."""
+# Nombre corto de cada variable, para mostrarlo en tarjetas (sin "tu ...").
+_NOMBRE_CORTO = {
+    "punt_matematicas": "Matemáticas",
+    "punt_lectura_critica": "Lectura crítica",
+    "punt_c_naturales": "Ciencias naturales",
+    "punt_sociales_ciudadanas": "Sociales y ciudadanas",
+    "punt_ingles": "Inglés",
+    "punt_global": "Puntaje global ICFES",
+    "fami_estratovivienda": "Estrato",
+    "fami_educacionpadre": "Educación de tu padre",
+    "fami_educacionmadre": "Educación de tu madre",
+    "edad": "Edad",
+}
+
+# Variables cuyo número se entiende tal cual (puntajes, estrato, edad). La
+# educación de los padres se guarda como un código interno, así que de esas
+# no se muestra el número.
+_CON_NUMERO_LEGIBLE = {
+    "punt_matematicas", "punt_lectura_critica", "punt_c_naturales",
+    "punt_sociales_ciudadanas", "punt_ingles", "punt_global",
+    "fami_estratovivienda", "edad",
+}
+
+
+def _razones(X: pd.DataFrame, max_condiciones: int = 3) -> list[dict]:
+    """Recorre decision_path del árbol (REQF012) y devuelve las condiciones
+    más relevantes para este estudiante, priorizando los puntajes ICFES y
+    el contexto socioeconómico por encima de variables administrativas del
+    colegio. Cada razón dice en qué variable se fijó el árbol, el valor del
+    estudiante, el punto de corte que usó el árbol y de qué lado quedó."""
     camino = _modelo.decision_path(X)
     nodos = camino.indices[camino.indptr[0]:camino.indptr[1]]
     feature_idx = _modelo.tree_.feature
@@ -151,25 +176,33 @@ def _generar_explicacion(X: pd.DataFrame, max_condiciones: int = 3) -> str:
             continue  # cada variable aparece una sola vez (el árbol puede repetirla en el camino)
         vistos.add(nombre_col)
         valor_escalado = X.iloc[0, idx]
-        va_bajo = valor_escalado <= threshold[nodo]
-        if nombre_col in _COLUMNAS_SCALER:
-            valor_real = _valor_original(nombre_col, valor_escalado)
-            valor_txt = f"{valor_real:.0f}"
-        else:
-            valor_txt = f"{valor_escalado:.0f}"
-        condiciones.append((nombre_col, va_bajo, valor_txt))
+        va_bajo = bool(valor_escalado <= threshold[nodo])
+        valor_real = _valor_original(nombre_col, valor_escalado)
+        referencia_real = _valor_original(nombre_col, threshold[nodo])
+        legible = nombre_col in _CON_NUMERO_LEGIBLE
+        condiciones.append({
+            "variable": nombre_col,
+            "nombre": _NOMBRE_CORTO[nombre_col],
+            "etiqueta": _ETIQUETAS[nombre_col],
+            "valor": round(float(valor_real), 1) if legible else None,
+            "referencia": round(float(referencia_real), 1) if legible else None,
+            "direccion": "por_debajo" if va_bajo else "por_encima",
+        })
 
-    condiciones.sort(key=lambda c: _PRIORIDAD.index(c[0]) if c[0] in _PRIORIDAD else 99)
-    elegidas = condiciones[:max_condiciones]
+    condiciones.sort(key=lambda c: _PRIORIDAD.index(c["variable"]) if c["variable"] in _PRIORIDAD else 99)
+    return condiciones[:max_condiciones]
 
-    if not elegidas:
+
+def _generar_explicacion(razones: list[dict]) -> str:
+    """Arma una frase en lenguaje sencillo a partir de las razones."""
+    if not razones:
         return "La recomendación se basó en tu perfil académico y socioeconómico completo."
 
     frases = []
-    for nombre_col, va_bajo, valor_txt in elegidas:
-        etiqueta = _ETIQUETAS[nombre_col]
-        calificativo = "relativamente bajo" if va_bajo else "destacado"
-        frases.append(f"{etiqueta} ({valor_txt}), {calificativo} frente al resto de tu perfil")
+    for r in razones:
+        calificativo = "relativamente bajo" if r["direccion"] == "por_debajo" else "destacado"
+        valor_txt = f" ({r['valor']:.0f})" if r["valor"] is not None else ""
+        frases.append(f"{r['etiqueta']}{valor_txt}, {calificativo} frente al resto de tu perfil")
 
     return "Esta recomendación se basó principalmente en " + "; ".join(frases) + "."
 
@@ -180,6 +213,7 @@ class Prediccion:
     nivel_formacion: str
     probabilidad: float | None
     explicacion: str
+    razones: tuple = ()
     version_modelo: str = VERSION_MODELO
 
 
@@ -192,7 +226,8 @@ def predecir(variables: dict) -> Prediccion:
     codigo = int(_modelo.predict(X)[0])
     area_nombre = _AREA_SNIES.get(codigo, "Ciencias sociales y humanas")
     nivel = _calcular_nivel(X.iloc[0])
-    explicacion = _generar_explicacion(X)
+    razones = _razones(X)
+    explicacion = _generar_explicacion(razones)
 
     # predict_proba siempre da 1.0 en este árbol (hojas puras): no es una
     # medida de confianza real, así que no se reporta (ver README).
@@ -201,4 +236,5 @@ def predecir(variables: dict) -> Prediccion:
         nivel_formacion=nivel,
         probabilidad=None,
         explicacion=explicacion,
+        razones=tuple(razones),
     )

@@ -34,6 +34,7 @@ class EstudianteVinculadoResponse(BaseModel):
     consentimiento_otorgado: bool
     asentimiento_otorgado: bool
     puede_continuar: bool
+    estado_proceso: str | None = None
 
 
 class AcudienteVinculadoResponse(BaseModel):

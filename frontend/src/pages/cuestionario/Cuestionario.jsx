@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Alert from "../../components/Alert";
 import Button from "../../components/Button";
 import Navbar from "../../components/Navbar";
-import ProgressBar from "../../components/ProgressBar";
 import { mensajeDeError } from "../../services/api";
 import { obtenerEstadoAutorizacion } from "../../services/consentimientoService";
 import {
@@ -14,12 +13,14 @@ import {
   obtenerInstrumentoActivo,
 } from "../../services/cuestionarioService";
 import { generarRecomendacion } from "../../services/recomendacionService";
-import PasoAcademico, { AREAS_ACADEMICAS, calcularPuntajeGlobalIcfes } from "./PasoAcademico";
+import PasoAcademico, { AREAS_ACADEMICAS, PasoFuenteIcfes, calcularPuntajeGlobalIcfes } from "./PasoAcademico";
 import PasoPsicometrico from "./PasoPsicometrico";
 import PasoSocioeconomico from "./PasoSocioeconomico";
 import PasoSociodemografico from "./PasoSociodemografico";
 
-const TOTAL_PASOS = 4;
+const TOTAL_PASOS = 5;
+// El test de intereses se muestra de a 6 preguntas para que quepa sin scroll.
+const PREGUNTAS_POR_PARTE = 6;
 
 export default function Cuestionario() {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ export default function Cuestionario() {
   const [preguntas, setPreguntas] = useState([]);
   const [cargandoPreguntas, setCargandoPreguntas] = useState(false);
   const [respuestas, setRespuestas] = useState({});
+  const [parteTest, setParteTest] = useState(0);
 
   useEffect(() => {
     obtenerEstadoAutorizacion()
@@ -50,7 +52,7 @@ export default function Cuestionario() {
   }, [navigate]);
 
   useEffect(() => {
-    if (paso === 4 && preguntas.length === 0) {
+    if (paso === 5 && preguntas.length === 0) {
       setCargandoPreguntas(true);
       obtenerInstrumentoActivo()
         .then((data) => setPreguntas(data.preguntas))
@@ -102,7 +104,7 @@ export default function Cuestionario() {
     setError("");
 
     const erroresPaso =
-      paso === 1 ? validarPaso1() : paso === 2 ? validarPaso2() : paso === 3 ? validarPaso3() : {};
+      paso === 2 ? validarPaso1() : paso === 3 ? validarPaso2() : paso === 4 ? validarPaso3() : {};
 
     if (Object.keys(erroresPaso).length > 0) {
       setErrores(erroresPaso);
@@ -113,7 +115,7 @@ export default function Cuestionario() {
 
     setGuardando(true);
     try {
-      if (paso === 1) {
+      if (paso === 2) {
         const notas = AREAS_ACADEMICAS.map((area) => ({
           area,
           nota: Number(academico[area]),
@@ -124,7 +126,7 @@ export default function Cuestionario() {
           desempeno_ingles: academico.desempeno_ingles,
           es_simulacro: Boolean(academico.es_simulacro),
         });
-      } else if (paso === 2) {
+      } else if (paso === 3) {
         await guardarSociodemografico({
           edad: Number(socio.edad),
           genero: socio.genero || null,
@@ -133,7 +135,7 @@ export default function Cuestionario() {
           cole_caracter: socio.cole_caracter,
           cole_jornada: socio.cole_jornada,
         });
-      } else if (paso === 3) {
+      } else if (paso === 4) {
         await guardarSocioeconomico({
           estrato: economico.estrato ? Number(economico.estrato) : null,
           rango_ingresos: economico.rango_ingresos || null,
@@ -156,6 +158,22 @@ export default function Cuestionario() {
     } finally {
       setGuardando(false);
     }
+  }
+
+  const totalPartes = Math.max(1, Math.ceil(preguntas.length / PREGUNTAS_POR_PARTE));
+  const preguntasParte = preguntas.slice(
+    parteTest * PREGUNTAS_POR_PARTE,
+    (parteTest + 1) * PREGUNTAS_POR_PARTE
+  );
+  const esUltimaParte = parteTest >= totalPartes - 1;
+
+  function siguienteParteTest() {
+    if (preguntasParte.some((p) => respuestas[p.id] === undefined)) {
+      setError("Responde todas las preguntas antes de continuar.");
+      return;
+    }
+    setError("");
+    setParteTest((n) => n + 1);
   }
 
   async function manejarFinalizar() {
@@ -182,32 +200,78 @@ export default function Cuestionario() {
 
   if (verificando) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-ice">
+      <div className="flex min-h-svh items-center justify-center bg-ice">
         <p className="text-sm text-navy/60">Cargando...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-ice">
+    // La página ocupa justo el alto de la pantalla: la tarjeta es ancha y
+    // los campos van en columnas para que cada paso quepa sin scroll.
+    <div className="flex min-h-svh flex-col bg-ice md:h-svh">
       <Navbar />
-      <main className="mx-auto max-w-xl px-6 py-12">
-        <div className="rounded-3xl border border-navy/5 bg-white p-8 shadow-xl shadow-teal/10">
-          <ProgressBar paso={paso} total={TOTAL_PASOS} />
+      {/* Arriba, no centrado: así el progreso queda quieto aunque la tarjeta
+          cambie de alto entre pasos. */}
+      <main className="mx-auto flex w-full max-w-5xl min-h-0 flex-1 flex-col px-6 pb-5 pt-6 sm:pt-8">
+      {/* Progreso por fuera de la tarjeta, centrado y sin fondo */}
+        <ol className="mx-auto mb-5 flex w-full max-w-md items-center">
+          {Array.from({ length: TOTAL_PASOS }, (_, i) => {
+            const numero = i + 1;
+            const alcanzado = numero <= paso;
+            return (
+              <li key={numero} className={"flex items-center " + (numero < TOTAL_PASOS ? "flex-1" : "")}>
+                <span
+                  className={
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-colors duration-300 " +
+                    (alcanzado
+                      ? "bg-teal text-white shadow-md shadow-teal/25"
+                      : "border border-navy/15 bg-white text-navy/50")
+                  }
+                >
+                  {numero}
+                </span>
+                {numero < TOTAL_PASOS && (
+                  <span
+                    className={
+                      "mx-1 h-0.5 flex-1 rounded-full transition-colors duration-300 " +
+                      (numero < paso ? "bg-teal" : "bg-navy/10")
+                    }
+                  />
+                )}
+              </li>
+            );
+          })}
+        </ol>
 
-              <h1 className="mt-5 text-lg font-semibold text-navy">
-                {paso === 1 && "Datos académicos"}
-                {paso === 2 && "Datos sociodemográficos"}
-                {paso === 3 && "Datos socioeconómicos"}
-                {paso === 4 && "Test de intereses"}
-              </h1>
+        {/* Tarjeta de alto fijo en pantallas medianas: el título queda quieto y
+            si un paso trae más campos, se hace scroll solo por dentro. */}
+        <div className="flex w-full flex-col rounded-3xl border border-navy/5 bg-white px-6 py-5 shadow-xl shadow-teal/10 sm:px-8 md:h-[22rem] md:min-h-0">
+          <h1 className="shrink-0 text-center text-xl font-semibold text-navy">
+            {paso === 1 && "Tus resultados del ICFES"}
+            {paso === 2 && "Datos académicos"}
+            {paso === 3 && "Datos sociodemográficos"}
+            {paso === 4 && "Datos socioeconómicos"}
+            {paso === 5 &&
+              "Test de intereses" + (totalPartes > 1 ? " · parte " + (parteTest + 1) + " de " + totalPartes : "")}
+          </h1>
 
-              <div className="mt-5">
+          {/* key: al cambiar de paso el scroll interno vuelve arriba */}
+          <div key={paso + "-" + parteTest} className="-mx-2 mt-1 min-h-0 flex-1 overflow-y-auto px-2 pb-1">
+            {error && (
+              <div className="mt-4">
                 <Alert tipo="error">{error}</Alert>
               </div>
+            )}
 
               <div className="mt-4">
                 {paso === 1 && (
+                  <PasoFuenteIcfes
+                    valores={academico}
+                    onChange={(campo, valor) => setAcademico((p) => ({ ...p, [campo]: valor }))}
+                  />
+                )}
+                {paso === 2 && (
                   <PasoAcademico
                     valores={academico}
                     errores={errores}
@@ -217,7 +281,7 @@ export default function Cuestionario() {
                     }}
                   />
                 )}
-                {paso === 2 && (
+                {paso === 3 && (
                   <PasoSociodemografico
                     valores={socio}
                     errores={errores}
@@ -227,7 +291,7 @@ export default function Cuestionario() {
                     }}
                   />
                 )}
-                {paso === 3 && (
+                {paso === 4 && (
                   <PasoSocioeconomico
                     valores={economico}
                     errores={errores}
@@ -237,9 +301,10 @@ export default function Cuestionario() {
                     }}
                   />
                 )}
-                {paso === 4 && (
+                {paso === 5 && (
                   <PasoPsicometrico
-                    preguntas={preguntas}
+                    preguntas={preguntasParte}
+                    desde={parteTest * PREGUNTAS_POR_PARTE}
                     respuestas={respuestas}
                     cargando={cargandoPreguntas}
                     onChange={(preguntaId, valor) =>
@@ -248,43 +313,56 @@ export default function Cuestionario() {
                   />
                 )}
               </div>
-
-              <div className="mt-6 flex gap-3">
-                {paso > 1 && (
-                  <Button
-                    variant="secondary"
-                    className="flex-1"
-                    onClick={() => {
-                      setErrores({});
-                      setError("");
-                      setPaso((p) => p - 1);
-                    }}
-                    disabled={guardando}
-                  >
-                    Anterior
-                  </Button>
-                )}
-                {paso < 4 ? (
-                  <Button
-                    variant="primary"
-                    className="flex-1"
-                    onClick={manejarSiguiente}
-                    disabled={guardando}
-                  >
-                    {guardando ? "Guardando..." : "Siguiente"}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="primary"
-                    className="flex-1"
-                    onClick={manejarFinalizar}
-                    disabled={guardando || cargandoPreguntas}
-                  >
-                    {guardando ? "Guardando..." : "Ver mi resultado"}
-                  </Button>
-                )}
-              </div>
+          </div>
         </div>
+
+        {/* Botones fuera de la tarjeta, abajo a la derecha: como la tarjeta
+            tiene alto fijo, quedan siempre en el mismo lugar. */}
+        <div className="flex justify-end gap-3 pt-6">
+            {(paso > 1 || parteTest > 0) && (
+              <Button
+                variant="secondary"
+                className="min-w-36"
+                onClick={() => {
+                  setErrores({});
+                  setError("");
+                  if (paso === 5 && parteTest > 0) setParteTest((n) => n - 1);
+                  else setPaso((p) => p - 1);
+                }}
+                disabled={guardando}
+              >
+                Anterior
+              </Button>
+            )}
+            {paso < 5 ? (
+              <Button
+                variant="primary"
+                className="min-w-36"
+                onClick={manejarSiguiente}
+                disabled={guardando}
+              >
+                {guardando ? "Guardando..." : "Siguiente"}
+              </Button>
+            ) : !esUltimaParte ? (
+              <Button
+                variant="primary"
+                className="min-w-36"
+                onClick={siguienteParteTest}
+                disabled={cargandoPreguntas}
+              >
+                Siguiente
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                className="min-w-36"
+                onClick={manejarFinalizar}
+                disabled={guardando || cargandoPreguntas}
+              >
+                {guardando ? "Guardando..." : "Ver mi resultado"}
+              </Button>
+            )}
+          </div>
       </main>
     </div>
   );

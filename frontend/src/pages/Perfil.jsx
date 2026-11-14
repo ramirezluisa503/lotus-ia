@@ -66,29 +66,72 @@ function tiempoRelativo(fechaIso) {
 }
 
 
+// Etapas del proceso de un estudiante, tal como las ve su acudiente.
+function etapasEstudiante(e) {
+  const etapa = e.estado_proceso;
+  return [
+    { titulo: "Tu autorización", hecho: e.consentimiento_otorgado },
+    { titulo: "Su aceptación", hecho: e.asentimiento_otorgado },
+    { titulo: "Cuestionario", hecho: etapa === "DATOS_COMPLETOS" || etapa === "RECOMENDADO" },
+    { titulo: "Recomendación", hecho: etapa === "RECOMENDADO" },
+  ];
+}
+
 function TarjetaEstudianteVinculado({ estudiante }) {
+  const etapas = etapasEstudiante(estudiante);
+  const hechas = etapas.filter((x) => x.hecho).length;
+
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-navy/10 p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <p className="text-sm font-semibold text-navy">{estudiante.nombre}</p>
-        <p className="text-xs text-navy/50">
-          {estudiante.correo} · Documento: {estudiante.documento || "sin registrar"} ·{" "}
-          {PARENTESCOS.find((p) => p.valor === estudiante.parentesco)?.etiqueta ?? estudiante.parentesco}
-        </p>
+    <div className="rounded-xl border border-navy/10 p-4 transition-shadow hover:shadow-md hover:shadow-teal/10">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-teal to-navy text-base font-bold text-white">
+            {(estudiante.nombre || estudiante.correo).charAt(0).toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-navy">{estudiante.nombre}</p>
+            <p className="truncate text-xs text-navy/50">
+              {PARENTESCOS.find((p) => p.valor === estudiante.parentesco)?.etiqueta ?? estudiante.parentesco} ·{" "}
+              {estudiante.correo} · Documento: {estudiante.documento || "sin registrar"}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <span
+            className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+              estudiante.consentimiento_otorgado ? "bg-mint/60 text-navy" : "bg-ice text-teal"
+            }`}
+          >
+            {estudiante.consentimiento_otorgado ? "✓ Autorizado" : "Pendiente"}
+          </span>
+          {!estudiante.consentimiento_otorgado && (
+            <Link
+              to="/autorizacion"
+              className="inline-flex items-center gap-1 rounded-full bg-teal px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-navy"
+            >
+              Autorizar
+              <IconArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          )}
+        </div>
       </div>
-      <div className="flex items-center gap-3">
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-            estudiante.consentimiento_otorgado ? "bg-mint/50 text-navy" : "bg-navy/5 text-navy/50"
-          }`}
-        >
-          {estudiante.consentimiento_otorgado ? "✓ Autorizado" : "Pendiente"}
-        </span>
-        {!estudiante.consentimiento_otorgado && (
-          <Link to="/autorizacion" className="text-xs font-medium text-teal hover:underline">
-            Ir a autorizar →
-          </Link>
-        )}
+
+      {/* Avance del estudiante en 4 tramos */}
+      <div className="mt-4">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-navy/50">Su proceso</span>
+          <span className="font-medium text-teal">
+            {hechas} de {etapas.length}
+          </span>
+        </div>
+        <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+          {etapas.map((x) => (
+            <div key={x.titulo}>
+              <div className={`h-1.5 rounded-full ${x.hecho ? "bg-linear-to-r from-mint to-teal" : "bg-navy/10"}`} />
+              <p className={`mt-1 truncate text-[11px] ${x.hecho ? "text-navy/70" : "text-navy/40"}`}>{x.titulo}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -138,91 +181,149 @@ function PerfilAcudiente({ usuario }) {
     }
   }
 
+  const total = estudiantes.length;
+  const autorizados = estudiantes.filter((e) => e.consentimiento_otorgado).length;
+  const porcentaje = cargando || total === 0 ? 0 : Math.round((autorizados / total) * 100);
+  const nombre = usuario?.nombre || usuario?.correo?.split("@")[0] || "";
+
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
-      <div className="rounded-3xl border border-navy/5 bg-white p-8 shadow-xl shadow-teal/10">
-        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-mint/40 text-teal">
-          <IconHeart className="h-5.5 w-5.5" />
-        </span>
+    <main className="mx-auto max-w-6xl px-6 py-10">
+      {/* Encabezado con el avance de autorizaciones */}
+      <section className="relative overflow-hidden rounded-3xl bg-linear-to-br from-teal to-navy p-6 text-white shadow-xl shadow-teal/20 sm:p-8">
+        <span className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-mint/25 blur-3xl" />
+        <span className="pointer-events-none absolute -bottom-20 left-1/3 h-48 w-48 rounded-full bg-cyan-light/20 blur-3xl" />
 
-        <h1 className="mt-4 text-xl font-semibold text-navy">Mi perfil</h1>
-
-        <dl className="mt-4 space-y-2 rounded-xl bg-ice/60 p-4 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-navy/60">Correo</dt>
-            <dd className="font-medium text-navy">{usuario?.correo}</dd>
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-mint text-2xl font-bold text-navy shadow-lg shadow-navy/30">
+              {nombre.charAt(0).toUpperCase()}
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-mint">Mi perfil</p>
+              <h1 className="truncate text-2xl font-bold sm:text-3xl">{nombre}</h1>
+              <p className="truncate text-sm text-white/70">{usuario?.correo}</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
+                  {ROL_ETIQUETA[usuario?.rol] ?? usuario?.rol}
+                </span>
+                {!cargando && (
+                  <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
+                    {total} {total === 1 ? "estudiante a cargo" : "estudiantes a cargo"}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <dt className="text-navy/60">Rol</dt>
-            <dd className="font-medium text-navy">{ROL_ETIQUETA[usuario?.rol] ?? usuario?.rol}</dd>
+
+          <div className="flex items-center gap-4">
+            <AnilloProgreso porcentaje={porcentaje} etiqueta="autorizado" />
+            <div className="text-sm">
+              <p className="font-semibold">
+                {autorizados} de {total} {total === 1 ? "autorizado" : "autorizados"}
+              </p>
+              <p className="max-w-40 text-white/70">
+                {total === 0
+                  ? "Vincula a tu estudiante para empezar."
+                  : autorizados === total
+                    ? "¡Ya autorizaste a todos!"
+                    : "Tu autorización es lo único que falta."}
+              </p>
+            </div>
           </div>
-        </dl>
+        </div>
+      </section>
 
-        <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-navy/50">
-          Estudiantes a tu cargo {!cargando && `(${estudiantes.length})`}
-        </h2>
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <Tarjeta
+            titulo={`Estudiantes a tu cargo${cargando ? "" : ` (${total})`}`}
+            accion={
+              !cargando &&
+              total > 0 && (
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    autorizados === total ? "bg-mint text-navy" : "bg-ice text-teal"
+                  }`}
+                >
+                  {autorizados === total
+                    ? "¡Todo al día!"
+                    : `${total - autorizados} pendiente${total - autorizados === 1 ? "" : "s"}`}
+                </span>
+              )
+            }
+          >
+            <Alert tipo="error">{error}</Alert>
+            {cargando ? (
+              <p className="text-sm text-navy/60">Cargando...</p>
+            ) : total === 0 ? (
+              <div className="rounded-xl border border-dashed border-navy/15 p-5 text-center">
+                <IconHeart className="mx-auto h-6 w-6 text-teal/60" />
+                <p className="mt-2 text-sm text-navy/60">Todavía no tienes ningún estudiante vinculado.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {estudiantes.map((est) => (
+                  <TarjetaEstudianteVinculado key={est.estudiante_usuario_id} estudiante={est} />
+                ))}
+              </div>
+            )}
+          </Tarjeta>
 
-        <div className="mt-3 space-y-3">
-          <Alert tipo="error">{error}</Alert>
-          {cargando ? (
-            <p className="text-sm text-navy/60">Cargando...</p>
-          ) : estudiantes.length === 0 ? (
-            <p className="text-sm text-navy/60">Todavía no tienes ningún estudiante vinculado.</p>
-          ) : (
-            estudiantes.map((est) => (
-              <TarjetaEstudianteVinculado key={est.estudiante_usuario_id} estudiante={est} />
-            ))
-          )}
+          <Tarjeta titulo="Vincular otro estudiante">
+            <p className="-mt-2 mb-4 text-sm text-navy/60">
+              Si tienes más de un estudiante a tu cargo (por ejemplo, otro hijo o hija), agrégalo
+              aquí con su correo — no necesitas crear otra cuenta.
+            </p>
+            <form onSubmit={manejarVincular} className="space-y-3">
+              <Alert tipo="error">{errorVinculo}</Alert>
+              {mensajeVinculo && <Alert tipo="exito">{mensajeVinculo}</Alert>}
+
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <Field label="Correo del estudiante" id="correoEstudianteNuevo">
+                  <input
+                    id="correoEstudianteNuevo"
+                    type="email"
+                    value={correoEstudiante}
+                    onChange={(e) => setCorreoEstudiante(e.target.value)}
+                    className={inputClasses(false)}
+                    placeholder="Debe tener su cuenta creada"
+                  />
+                </Field>
+                <Field label="Parentesco" id="parentescoNuevo">
+                  <select
+                    id="parentescoNuevo"
+                    value={parentesco}
+                    onChange={(e) => setParentesco(e.target.value)}
+                    className={inputClasses(false)}
+                  >
+                    {PARENTESCOS.map((p) => (
+                      <option key={p.valor} value={p.valor}>
+                        {p.etiqueta}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+
+              <Button type="submit" variant="primary" disabled={enviando}>
+                {enviando ? "Vinculando..." : "Vincular estudiante"}
+              </Button>
+            </form>
+          </Tarjeta>
         </div>
 
-        <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-navy/50">
-          Vincular otro estudiante
-        </h2>
-        <p className="mt-1 text-xs text-navy/50">
-          Si tienes más de un estudiante a tu cargo (por ejemplo, otro hijo o hija), agrégalo
-          aquí con su correo — no necesitas crear otra cuenta.
-        </p>
-
-        <form onSubmit={manejarVincular} className="mt-3 space-y-3">
-          <Alert tipo="error">{errorVinculo}</Alert>
-          {mensajeVinculo && <Alert tipo="exito">{mensajeVinculo}</Alert>}
-
-          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-            <Field label="Correo del estudiante" id="correoEstudianteNuevo">
-              <input
-                id="correoEstudianteNuevo"
-                type="email"
-                value={correoEstudiante}
-                onChange={(e) => setCorreoEstudiante(e.target.value)}
-                className={inputClasses(false)}
-                placeholder="Debe tener su cuenta creada"
-              />
-            </Field>
-            <Field label="Parentesco" id="parentescoNuevo">
-              <select
-                id="parentescoNuevo"
-                value={parentesco}
-                onChange={(e) => setParentesco(e.target.value)}
-                className={inputClasses(false)}
-              >
-                {PARENTESCOS.map((p) => (
-                  <option key={p.valor} value={p.valor}>
-                    {p.etiqueta}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          <Button type="submit" variant="primary" disabled={enviando}>
-            {enviando ? "Vinculando..." : "Vincular estudiante"}
-          </Button>
-        </form>
-
-        <Link to="/panel" className="mt-8 block text-center text-sm font-medium text-teal hover:underline">
-          Volver a mi panel
-        </Link>
+        <div className="space-y-6">
+          <SeccionNotificaciones />
+        </div>
       </div>
+
+      <div className="mt-6">
+        <SeccionDatosBasicos usuario={usuario} />
+      </div>
+
+      <Link to="/panel" className="mt-8 block text-center text-sm font-medium text-teal hover:underline">
+        Volver a mi panel
+      </Link>
     </main>
   );
 }
@@ -247,7 +348,7 @@ function Tarjeta({ titulo, accion, children, className = "" }) {
 }
 
 // Anillo de progreso: un círculo que se llena según el porcentaje.
-function AnilloProgreso({ porcentaje }) {
+function AnilloProgreso({ porcentaje, etiqueta = "completo" }) {
   const radio = 42;
   const circunferencia = 2 * Math.PI * radio;
   return (
@@ -269,7 +370,7 @@ function AnilloProgreso({ porcentaje }) {
       </svg>
       <span className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-2xl font-bold text-white">{porcentaje}%</span>
-        <span className="text-[10px] uppercase tracking-wide text-white/60">completo</span>
+        <span className="text-[10px] uppercase tracking-wide text-white/60">{etiqueta}</span>
       </span>
     </div>
   );

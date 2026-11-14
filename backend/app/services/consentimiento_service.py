@@ -102,6 +102,10 @@ class ConsentimientoService:
             if usuario_estudiante is None:
                 continue
             estado = self.obtener_estado(vinculo.estudiante_usuario_id)
+            # Etapa del proceso (registrado, autorizado, cuestionario completo,
+            # recomendado) para que el acudiente vea cómo va. No incluye respuestas.
+            estudiante_id = self.estudiantes.obtener_estudiante_id_de_usuario(vinculo.estudiante_usuario_id)
+            estudiante = self.estudiantes.obtener_por_id(estudiante_id) if estudiante_id else None
             resultado.append(
                 EstudianteVinculadoResponse(
                     estudiante_usuario_id=vinculo.estudiante_usuario_id,
@@ -116,6 +120,7 @@ class ConsentimientoService:
                     consentimiento_otorgado=estado.consentimiento_otorgado,
                     asentimiento_otorgado=estado.asentimiento_otorgado,
                     puede_continuar=estado.puede_continuar,
+                    estado_proceso=estudiante.estado_proceso if estudiante else None,
                 )
             )
         return resultado

@@ -26,6 +26,28 @@
   }
 }
 
+/* Historias del resultado: cada elemento entra subiendo y apareciendo.
+   El retraso se pone en línea (style={{ animationDelay }}) para que entren
+   uno tras otro. */
+@keyframes historia-aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.historia-aparecer {
+  animation: historia-aparecer 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .historia-aparecer {
+    animation: none;
+  }
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--color-ice);

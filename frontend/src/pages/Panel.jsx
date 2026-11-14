@@ -1,17 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import Button from "../components/Button";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import {
   IconArrowRight,
   IconBell,
   IconBrain,
-  IconChart,
   IconHeart,
   IconHome,
   IconShield,
-  IconSparkles,
 } from "../components/icons";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -20,18 +17,17 @@ import {
 } from "../services/consentimientoService";
 import { listarBecas } from "../services/ofertaService";
 
-const ROL_ETIQUETA = {
-  ESTUDIANTE: "Estudiante",
-  ACUDIENTE: "Acudiente",
-  ADMINISTRADOR: "Administrador",
-};
+const PARENTESCO_ETIQUETA = { MADRE: "Madre", PADRE: "Padre", TUTOR_LEGAL: "Tutor legal" };
 
+// Tarjetas de "Lo que necesitas saber": mismo estilo que las de la página de
+// inicio (oscura · blanca · oscura).
 const INFO_ACUDIENTE = [
   {
     icon: IconBrain,
     title: "¿Qué es Lotus.IA?",
     description:
       "Un proyecto piloto de orientación vocacional para estudiantes de grado 10° y 11° en Pereira. A partir del desempeño académico, un test de intereses y el contexto del estudiante, una inteligencia artificial sugiere un área de conocimiento y un nivel de formación acordes a su perfil.",
+    oscura: true,
   },
   {
     icon: IconShield,
@@ -44,27 +40,196 @@ const INFO_ACUDIENTE = [
     title: "¿Cómo se protegen sus datos?",
     description:
       "El nombre y el documento del estudiante se cifran y se guardan separados de sus respuestas académicas: la inteligencia artificial nunca ve su identidad, solo un código anónimo. Puedes cambiar tu decisión y revocar la autorización cuando quieras.",
+    oscura: true,
   },
 ];
 
-const PASOS_ACUDIENTE = [
-  {
-    title: "Autorizas",
-    description: "Revisas de qué se trata y das tu consentimiento como acudiente, aquí mismo.",
-  },
-  {
-    title: "Tu estudiante responde",
-    description:
-      "Con tu autorización activa, completa sus datos académicos, un cuestionario sobre su entorno y un test de intereses.",
-  },
-  {
-    title: "Recibe su resultado",
-    description:
-      "La IA le recomienda un área de conocimiento y nivel de formación, junto con instituciones y becas en Pereira.",
-  },
-];
+// Línea de pasos del proceso de un estudiante, vista por su acudiente.
+// Si `estudiante` es null (aún no hay ninguno vinculado) se muestran los
+// pasos sin completar, a modo de explicación.
+function ProgresoEstudiante({ estudiante, conNombre = false }) {
+  const etapa = estudiante?.estado_proceso;
+  const autorizado = Boolean(estudiante?.puede_continuar);
 
-function PanelAcudiente({ usuario }) {
+  const pasos = [
+    {
+      title: "Tu autorización",
+      description: "Das tu consentimiento como acudiente.",
+      hecho: Boolean(estudiante?.consentimiento_otorgado),
+    },
+    {
+      title: "Su aceptación",
+      description: "El estudiante confirma que quiere participar.",
+      hecho: Boolean(estudiante?.asentimiento_otorgado),
+    },
+    {
+      title: "Cuestionario",
+      description: "Responde sus datos académicos, su entorno y sus intereses.",
+      hecho: etapa === "DATOS_COMPLETOS" || etapa === "RECOMENDADO",
+      bloqueado: !autorizado,
+    },
+    {
+      title: "Recomendación",
+      description: "Recibe su área y nivel de formación sugeridos.",
+      hecho: etapa === "RECOMENDADO",
+      bloqueado: !autorizado,
+    },
+  ];
+  const siguiente = estudiante ? pasos.find((p) => !p.hecho) : null;
+  const hechos = pasos.filter((p) => p.hecho).length;
+
+  return (
+    <div className="mt-12">
+      {conNombre && (
+        <div className="mb-6 flex items-center justify-center gap-3">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-teal to-navy text-sm font-bold text-white">
+            {(estudiante.nombre || estudiante.correo).charAt(0).toUpperCase()}
+          </span>
+          <p className="font-semibold text-navy">{estudiante.nombre}</p>
+          <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-teal">
+            {hechos} de {pasos.length}
+          </span>
+        </div>
+      )}
+      <div className="relative grid gap-8 sm:grid-cols-4">
+        <div className="absolute left-[12.5%] right-[12.5%] top-5 hidden h-px bg-navy/10 sm:block" />
+        {pasos.map((paso, index) => {
+          const esSiguiente = paso === siguiente;
+          const tenue = paso.bloqueado && !paso.hecho;
+          return (
+            <div key={paso.title} className={`group relative text-center ${tenue ? "opacity-55" : ""}`}>
+              <span
+                className={`relative z-10 mx-auto flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-sm font-semibold shadow-md transition-[color,box-shadow] duration-500 ${
+                  paso.hecho
+                    ? "bg-mint text-navy shadow-mint/60"
+                    : "bg-linear-to-br from-teal to-navy text-white shadow-teal/30 group-hover:text-navy"
+                } ${esSiguiente ? "ring-4 ring-mint/50" : ""}`}
+              >
+                {!paso.hecho && (
+                  <span className="absolute inset-0 bg-mint opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                )}
+                <span className="relative">{paso.hecho ? "✓" : index + 1}</span>
+              </span>
+              <h3 className="mt-4 font-semibold text-navy">{paso.title}</h3>
+              <p className="mx-auto mt-1.5 max-w-xs text-sm text-navy/65">{paso.description}</p>
+              {paso.hecho ? (
+                <p className="mt-2 text-xs font-medium text-teal">Completado</p>
+              ) : esSiguiente && index === 0 ? (
+                <Link to="/autorizacion" className="mt-2 inline-block text-xs font-semibold text-teal hover:underline">
+                  Autorizar ahora →
+                </Link>
+              ) : esSiguiente ? (
+                <p className="mt-2 text-xs font-medium text-teal">En curso</p>
+              ) : tenue ? (
+                <p className="mt-2 text-xs font-medium text-teal">Se desbloquea con la autorización</p>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Tarjeta que queda montada sobre el borde de la foto: muestra cada
+// estudiante a cargo y si ya tiene la autorización.
+function AvisoEstudiantesACargo({ estudiantes, cargando }) {
+  if (cargando) return null;
+
+  const pendientes = estudiantes.filter((e) => !e.consentimiento_otorgado).length;
+  const hayPendientes = pendientes > 0;
+
+  if (estudiantes.length === 0) {
+    return (
+      <div className="flex flex-col gap-4 rounded-2xl border border-navy/5 bg-white px-5 py-4 shadow-xl shadow-teal/10 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="flex items-center gap-4">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ice text-teal">
+            <IconHeart className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="font-semibold text-navy">Todavía no tienes estudiantes vinculados</p>
+            <p className="text-sm text-navy/60">Vincula a tu estudiante con su correo desde tu perfil.</p>
+          </div>
+        </div>
+        <Link
+          to="/perfil"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-teal px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-navy"
+        >
+          Vincular estudiante
+          <IconArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-navy/5 bg-white px-5 py-4 shadow-xl shadow-teal/10 sm:px-6">
+      {hayPendientes && <span className="absolute inset-y-0 left-0 w-1.5 bg-linear-to-b from-mint to-teal" />}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-4">
+          {hayPendientes ? (
+            <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ice text-teal">
+              <IconBell className="h-5 w-5" />
+              <span className="absolute right-0.5 top-0.5 flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal opacity-60 motion-reduce:hidden" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-teal ring-2 ring-white" />
+              </span>
+            </span>
+          ) : (
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-mint text-lg font-bold text-navy">
+              ✓
+            </span>
+          )}
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-teal">
+              {hayPendientes ? "Pendiente" : "Todo al día"}
+            </p>
+            <p className="mt-0.5 font-semibold text-navy">
+              {hayPendientes
+                ? pendientes === 1
+                  ? "Un estudiante espera tu autorización"
+                  : `${pendientes} estudiantes esperan tu autorización`
+                : "Ya autorizaste a tus estudiantes"}
+            </p>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {estudiantes.map((e) => (
+                <li
+                  key={e.estudiante_usuario_id}
+                  className={`inline-flex items-center gap-2 rounded-full py-1 pl-1 pr-3 text-sm ${
+                    e.consentimiento_otorgado ? "bg-mint/40 text-navy" : "bg-ice text-navy"
+                  }`}
+                >
+                  <span
+                    className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                      e.consentimiento_otorgado ? "bg-mint text-navy" : "bg-linear-to-br from-teal to-navy text-white"
+                    }`}
+                  >
+                    {e.consentimiento_otorgado ? "✓" : (e.nombre || e.correo).charAt(0).toUpperCase()}
+                  </span>
+                  <span className="font-medium">{e.nombre}</span>
+                  <span className="text-xs text-navy/50">
+                    {PARENTESCO_ETIQUETA[e.parentesco] ?? e.parentesco}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <Link
+          to="/autorizacion"
+          className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-colors ${
+            hayPendientes ? "bg-teal text-white hover:bg-navy" : "border border-navy/15 text-navy hover:bg-ice"
+          }`}
+        >
+          {hayPendientes ? "Autorizar ahora" : "Revisar mi autorización"}
+          <IconArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function PanelAcudiente() {
   const [estudiantes, setEstudiantes] = useState([]);
   const [cargando, setCargando] = useState(true);
 
@@ -83,169 +248,100 @@ function PanelAcudiente({ usuario }) {
     <div className="min-h-screen bg-ice">
       <Navbar />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-mint/40 blur-3xl" />
-        <div className="pointer-events-none absolute -left-24 top-40 h-72 w-72 rounded-full bg-cyan-light/60 blur-3xl" />
+      {/* Portada con foto, como en la página de inicio */}
+      <section className="relative overflow-hidden bg-navy">
+        <img
+          src="/img/panel-acudiente.jpg"
+          alt="Dos personas revisando juntas un computador y un celular"
+          className="absolute inset-0 h-full w-full object-cover object-[60%_35%]"
+        />
+        <div className="absolute inset-0 bg-linear-to-r from-navy/90 via-navy/65 to-navy/10" />
 
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 sm:py-20 lg:grid-cols-2">
-          <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-mint/50 px-3 py-1 text-xs font-medium text-navy">
-              <IconHeart className="h-3.5 w-3.5" />
-              Panel del acudiente
-            </span>
-
-            <h1 className="mt-5 text-3xl font-semibold leading-tight text-navy sm:text-4xl">
-              Gracias por acompañar a tu estudiante en su decisión vocacional
-            </h1>
-
-            <p className="mt-5 max-w-xl text-lg text-navy/70">
-              Lotus.IA es una herramienta orientativa, no reemplaza el
-              acompañamiento del orientador escolar ni garantiza cupos o
-              becas. Aquí puedes entender de qué trata antes de autorizar la
-              participación del estudiante a tu cargo.
-            </p>
-
-            {!cargando && (
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <Button as={Link} to="/autorizacion" variant="primary" size="lg">
-                  {yaAutorizo ? "Revisar mi autorización" : "Autorizar participación"}
-                  <IconArrowRight className="h-4 w-4" />
-                </Button>
-                <Button as="a" href="#como-funciona" variant="ghost" size="lg">
-                  ¿Cómo funciona?
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div className="relative mx-auto w-full max-w-sm">
-            <div className="rounded-3xl border border-white/60 bg-white/70 p-6 shadow-xl shadow-teal/10 backdrop-blur">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium uppercase tracking-wide text-navy/50">
-                  Tu cuenta
-                </span>
-                <IconSparkles className="h-4 w-4 text-teal" />
-              </div>
-
-              <dl className="mt-4 space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-navy/60">Correo</dt>
-                  <dd className="font-medium text-navy">{usuario?.correo}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-navy/60">Rol</dt>
-                  <dd className="font-medium text-navy">
-                    {ROL_ETIQUETA[usuario?.rol] ?? usuario?.rol}
-                  </dd>
-                </div>
-              </dl>
-
-              <div className="mt-5 border-t border-navy/10 pt-4">
-                <p className="text-sm font-medium text-navy">Estudiantes a tu cargo</p>
-                <p className="mt-1.5 text-sm text-navy/70">
-                  {cargando
-                    ? "Consultando..."
-                    : totalEstudiantes === 0
-                      ? "Todavía no tienes ninguno vinculado."
-                      : `${totalEstudiantes} ${totalEstudiantes === 1 ? "estudiante" : "estudiantes"}, ${pendientes} pendiente${pendientes === 1 ? "" : "s"} de autorizar.`}
-                </p>
-              </div>
-            </div>
+        <div className="relative mx-auto max-w-6xl px-6 pb-20 pt-10 sm:pb-20 sm:pt-12">
+          <h1 className="max-w-2xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
+            Acompaña a tu estudiante <span className="text-mint">en su decisión vocacional.</span>
+          </h1>
+          <p className="mt-5 max-w-xl text-base text-white/85 sm:text-lg">
+            Aquí puedes entender de qué trata Lotus.IA antes de autorizar la
+            participación del estudiante a tu cargo.
+          </p>
+          <div className="mt-7 flex flex-wrap items-center gap-5">
+            <Link
+              to="/autorizacion"
+              className="inline-flex items-center gap-2 rounded-full bg-mint px-7 py-3.5 text-base font-medium text-navy shadow-lg shadow-navy/30 transition-colors hover:bg-white"
+            >
+              {yaAutorizo ? "Revisar mi autorización" : "Autorizar participación"}
+              <IconArrowRight className="h-4 w-4" />
+            </Link>
+            <a href="#progreso" className="text-base font-medium text-white/90 underline-offset-4 hover:underline">
+              Ver su progreso
+            </a>
           </div>
         </div>
       </section>
 
-      {/* Qué necesitas saber */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      {/* Estudiantes a cargo: montado sobre el borde de la foto */}
+      <div className="relative z-10 mx-auto -mt-12 max-w-5xl px-6">
+        <AvisoEstudiantesACargo estudiantes={estudiantes} cargando={cargando} />
+      </div>
+
+      {/* Progreso de cada estudiante, igual que "Tu proceso, paso a paso" del estudiante */}
+      <section id="progreso" className="mx-auto max-w-6xl scroll-mt-20 px-6 py-16">
         <h2 className="text-center text-2xl font-semibold text-navy sm:text-3xl">
-          Lo que necesitas saber antes de autorizar
+          {totalEstudiantes > 1 ? "El proceso de tus estudiantes" : "El proceso de tu estudiante"}
         </h2>
         <p className="mx-auto mt-3 max-w-2xl text-center text-navy/70">
-          Tu rol es breve pero importante: tu autorización es lo único que
-          falta para que el estudiante pueda empezar.
+          Aquí ves en qué etapa va. Las respuestas del cuestionario son privadas
+          del estudiante.
         </p>
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-3">
-          {INFO_ACUDIENTE.map(({ icon: Icon, title, description }) => (
-            <div
-              key={title}
-              className="rounded-2xl border border-navy/5 bg-white p-6 transition-shadow hover:shadow-lg hover:shadow-teal/10"
-            >
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal/10 text-teal">
-                <Icon className="h-5.5 w-5.5" />
-              </span>
-              <h3 className="mt-4 font-semibold text-navy">{title}</h3>
-              <p className="mt-1.5 text-sm text-navy/65">{description}</p>
-            </div>
-          ))}
-        </div>
+        {totalEstudiantes === 0 ? (
+          <ProgresoEstudiante estudiante={null} />
+        ) : (
+          estudiantes.map((e) => (
+            <ProgresoEstudiante key={e.estudiante_usuario_id} estudiante={e} conNombre={totalEstudiantes > 1} />
+          ))
+        )}
       </section>
 
-      {/* Cómo funciona */}
-      <section id="como-funciona" className="bg-white py-16">
+      {/* Qué necesitas saber: queda al final como información de consulta */}
+      <section className="bg-white py-16">
         <div className="mx-auto max-w-6xl px-6">
           <h2 className="text-center text-2xl font-semibold text-navy sm:text-3xl">
-            Cómo funciona desde que autorizas
+            Lo que necesitas saber
           </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-navy/70">
+            Tu rol es breve pero importante: tu autorización es lo único que
+            falta para que el estudiante pueda empezar.
+          </p>
 
-          <div className="relative mt-12 grid gap-8 sm:grid-cols-3">
-            <div className="absolute left-0 right-0 top-5 hidden h-px bg-navy/10 sm:block" />
-            {PASOS_ACUDIENTE.map((paso, index) => (
-              <div key={paso.title} className="relative text-center">
-                <span className="relative z-10 mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-teal to-navy text-sm font-semibold text-white shadow-md shadow-teal/30">
-                  {index + 1}
-                </span>
-                <h3 className="mt-4 font-semibold text-navy">{paso.title}</h3>
-                <p className="mx-auto mt-1.5 max-w-xs text-sm text-navy/65">
-                  {paso.description}
-                </p>
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+            {INFO_ACUDIENTE.map(({ icon: Icon, title, description, oscura }) => (
+              <div key={title} className="group transition-transform duration-300 hover:-translate-y-2">
+                <div
+                  className={`h-full rounded-2xl p-6 shadow-sm transition-shadow duration-300 group-hover:shadow-xl group-hover:shadow-teal/15 ${
+                    oscura ? "bg-linear-to-br from-teal to-navy" : "bg-ice/70"
+                  }`}
+                >
+                  <span
+                    className={`flex h-12 w-12 items-center justify-center rounded-xl ${
+                      oscura ? "bg-white/10 text-mint" : "bg-mint/40 text-teal"
+                    }`}
+                  >
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <h3 className={`mt-5 font-bold ${oscura ? "text-white" : "text-navy"}`}>{title}</h3>
+                  <p className={`mt-2 text-sm ${oscura ? "text-white/80" : "text-navy/70"}`}>{description}</p>
+                </div>
               </div>
             ))}
           </div>
+
+          <p className="mt-10 flex items-center justify-center gap-2 text-center text-xs text-navy/55">
+            <IconShield className="h-4 w-4 shrink-0" />
+            Lotus.IA es orientativa: no reemplaza el acompañamiento del orientador escolar ni garantiza cupos o becas.
+          </p>
         </div>
-      </section>
-
-      {/* CTA final */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
-        <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-teal to-navy px-8 py-12 text-center sm:px-16">
-          <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-mint/20 blur-2xl" />
-          {yaAutorizo ? (
-            <>
-              <h2 className="text-2xl font-semibold text-white sm:text-3xl">
-                Ya autorizaste la participación de tu estudiante
-              </h2>
-              <p className="mx-auto mt-3 max-w-xl text-white/80">
-                Puede continuar con su cuestionario y recibir su recomendación.
-                Si cambias de opinión, puedes revisar tu decisión cuando
-                quieras.
-              </p>
-            </>
-          ) : (
-            <>
-              <h2 className="text-2xl font-semibold text-white sm:text-3xl">
-                ¿Listo/a para autorizar?
-              </h2>
-              <p className="mx-auto mt-3 max-w-xl text-white/80">
-                Toma menos de un minuto. Mientras no lo hagas, el estudiante a
-                tu cargo no puede avanzar con su proceso.
-              </p>
-            </>
-          )}
-          <Button as={Link} to="/autorizacion" variant="light" size="lg" className="mt-7">
-            {yaAutorizo ? "Revisar mi autorización" : "Ir a autorizar"}
-            <IconArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <p className="mx-auto mt-8 max-w-2xl rounded-xl border border-cyan-light bg-white px-5 py-3.5 text-center text-sm text-navy/70 flex items-center gap-2 justify-center">
-          <IconChart className="h-4 w-4 shrink-0 text-teal" />
-          <span>
-            ¿Dudas? Puedes volver a esta página cuando quieras desde el logo
-            de Lotus.IA, arriba a la izquierda.
-          </span>
-        </p>
-
       </section>
 
       <Footer />
@@ -362,8 +458,7 @@ function PanelEstudiante() {
         <div className="absolute inset-0 bg-linear-to-r from-navy/90 via-navy/60 to-navy/10" />
 
         <div className="relative mx-auto max-w-6xl px-6 pb-20 pt-10 sm:pb-20 sm:pt-12">
-          <p className="text-sm font-medium text-mint">Tu espacio en Lotus.IA</p>
-          <h1 className="mt-3 max-w-2xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
+          <h1 className="max-w-2xl text-3xl font-bold leading-tight tracking-tight text-white sm:text-5xl">
             ¡Hola! Tu futuro <span className="text-mint">empieza a tomar forma.</span>
           </h1>
           <p className="mt-5 max-w-xl text-base text-white/85 sm:text-lg">
@@ -508,7 +603,7 @@ export default function Panel() {
   const { usuario } = useAuth();
 
   if (usuario?.rol === "ACUDIENTE") {
-    return <PanelAcudiente usuario={usuario} />;
+    return <PanelAcudiente />;
   }
   return <PanelEstudiante />;
 }
