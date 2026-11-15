@@ -26,10 +26,37 @@ administrador no se guardan en el repositorio.
 
 ```
 Lotus.IA/
-├── frontend/   React + Vite + Tailwind CSS (interfaz web)
-├── backend/    FastAPI + SQLAlchemy + PostgreSQL (API REST)
-│   └── ml/     Modelo de IA entrenado (Árbol de Decisión) y scripts de entrenamiento
-└── docs/       Documentación del proyecto (análisis, diseño, diagramas)
+├── frontend/                   React + Vite + Tailwind CSS (interfaz web)
+│   ├── src/
+│   │   ├── pages/               Páginas: Home, Login, Registro, Cuestionario, Resultado,
+│   │   │                        Oferta, Perfil, Panel, Autorización, admin/ (panel de administración)
+│   │   ├── components/          Componentes reutilizables (Navbar, Button, Field, Alert,
+│   │   │                        Notificaciones, HistoriasResultado...)
+│   │   ├── services/            Llamadas a la API del backend (authService, cuestionarioService,
+│   │   │                        ofertaService, recomendacionService...)
+│   │   ├── context/              Estado global de sesión (AuthContext)
+│   │   └── routes/               Rutas protegidas según el rol del usuario
+│   ├── public/img/               Imágenes estáticas
+│   └── Dockerfile, Caddyfile     Imagen de producción (Caddy sirve el frontend y hace de proxy HTTPS)
+│
+├── backend/                    FastAPI + SQLAlchemy + PostgreSQL (API REST)
+│   ├── app/
+│   │   ├── controllers/          Endpoints HTTP, uno por módulo (auth, cuestionario, oferta,
+│   │   │                         consentimiento, recomendacion, admin...)
+│   │   ├── services/              Lógica de negocio de cada módulo
+│   │   ├── repositories/          Acceso a la base de datos (consultas SQL vía SQLAlchemy)
+│   │   ├── models/                  Tablas de la base de datos (SQLAlchemy ORM)
+│   │   ├── schemas/                  Validación de datos de entrada/salida (Pydantic)
+│   │   ├── core/                     Seguridad (JWT, cifrado, hashing), configuración, email
+│   │   ├── ia/                        Carga del modelo entrenado y generación de predicciones
+│   │   └── db/                        Conexión y sesión de la base de datos
+│   ├── db/                       schema.sql, migraciones (migration_001...008) y datos semilla
+│   ├── ml/                       Modelo de IA entrenado (.pkl) + entrenamiento/ (scripts paso a
+│   │                             paso: limpieza, codificación, normalización, comparación de modelos)
+│   └── scripts/                  Scripts de administración (crear_admin.py)
+│
+└── docs/                       Documentación del proyecto (análisis, diseño, diagramas, guía de
+                                 despliegue en AWS, identidad de marca)
 ```
 
 Arquitectura: N-capas (monolito modular) — ver `docs/` para el detalle de la
