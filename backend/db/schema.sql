@@ -255,6 +255,7 @@ CREATE TABLE app.recomendaciones (
                      CHECK (nivel_formacion IN ('TECNICO_PROFESIONAL','TECNOLOGICO','UNIVERSITARIO')),
   probabilidad      NUMERIC(5,4) CHECK (probabilidad BETWEEN 0 AND 1),
   explicacion       TEXT NOT NULL,
+  razones           JSONB,
   generada_en       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
