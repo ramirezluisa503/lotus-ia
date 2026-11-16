@@ -8,11 +8,13 @@ Autoras: Luisa Fernanda Ramírez Osorio, Mariana Rosero Medina.
 
 ## Despliegue
 
-La plataforma está publicada en **https://16-59-117-22.sslip.io**
+La plataforma está publicada en **https://lotus-ia.duckdns.org**
 
 - Servidor: AWS EC2 (capa gratuita), región Ohio (`us-east-2`), una sola instancia
-  `t3.micro` con IP elástica `16.59.117.22`. No hay dominio propio: `sslip.io`
-  convierte la IP en una dirección con HTTPS.
+  `t3.micro` con IP elástica `16.59.117.22`.
+- Dominio: subdominio gratuito de [DuckDNS](https://www.duckdns.org) que apunta a esa IP.
+  Para cambiarlo se actualiza `DOMINIO` en el `.env` del servidor y se corre
+  `docker compose -f docker-compose.prod.yml up -d`; Caddy saca el certificado HTTPS solo.
 - Corre con `docker-compose.prod.yml`: base de datos (PostgreSQL), backend (FastAPI +
   modelo de IA) y Caddy, que sirve el frontend y saca el certificado HTTPS.
 - Publicar cambios nuevos de `main`: entrar al servidor y correr
